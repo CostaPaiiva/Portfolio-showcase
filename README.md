@@ -280,6 +280,53 @@ Acesse no navegador: http://localhost:8080
 Dentro do pgAdmin, o host correto é postgres, pois o pgAdmin e o PostgreSQL estão na mesma rede Docker.
 </div>
 
+## Pipeline de Extração
+
+O pipeline de extração foi implementado no arquivo:
+
+```text
+src/extraction/extract_sample_data.py
+
+Nesta etapa, são gerados dados simulados de concursos públicos em formato JSON.
+
+O script executa as seguintes ações:
+
+Simula a coleta de dados de concursos.
+Adiciona metadados da extração.
+Salva os dados brutos na pasta data/raw.
+Gera um arquivo JSON com data e hora da execução.
+
+Exemplo de execução:
+
+python src/extraction/extract_sample_data.py
+
+Exemplo de saída:
+
+Iniciando extração de dados simulados...
+Extração concluída com sucesso!
+Registros extraídos: 6
+Arquivo gerado: data/raw/concursos_raw_YYYY_MM_DD_HH_MM_SS.json
+
+Os arquivos gerados em data/raw não são versionados no GitHub, pois representam dados brutos de execução.
+
+Para fins de demonstração no portfólio, foi criada a pasta:
+
+data/sample/
+
+Essa pasta contém um pequeno exemplo do formato dos dados extraídos.
+
+
+Atenção: quando colar no README, cuidado com os blocos de código dentro de blocos de código. Se o GitHub quebrar a visualização, me mande que eu ajusto.
+
+---
+
+# 7. Atualizar o relatório
+
+No arquivo:
+
+```text
+docs/relatorio.md
+```
 ## Testes Realizados
 
 ### Testar banco pelo terminal
@@ -380,21 +427,96 @@ Tabelas encontradas no banco:
 | Dados de teste inseridos | Concluído |
 | Conexão Python com PostgreSQL | Concluído |
 | Script de teste de conexão | Concluído |
-| Pipeline de extração | Pendente |
+| Pipeline de extração | Concluído |
+| Geração de dados brutos em JSON | Concluído |
 | Pipeline de transformação | Pendente |
 | Carga automatizada | Pendente |
 | Dashboard | Pendente |
 | Relatório final | Em andamento |
 
+## Pipeline de Extração
+
+Nesta etapa foi criado o primeiro pipeline de extração do projeto.
+
+O script responsável é:
+
+```text
+src/extraction/extract_sample_data.py
+
+A função desse script é simular a coleta de dados de concursos públicos, representando a primeira camada do fluxo de Engenharia de Dados.
+
+Em um cenário real, essa etapa poderia coletar informações de:
+
+APIs públicas.
+Sites de bancas organizadoras.
+Páginas institucionais.
+Editais em PDF.
+Portais agregadores de concursos.
+Dados extraídos
+
+Os dados simulados possuem informações como:
+
+Campo	Descrição
+orgao	Órgão responsável pelo concurso
+cargo	Cargo ofertado
+area	Área de atuação
+nivel	Nível exigido
+banca	Banca organizadora
+estado	Estado do concurso
+regiao	Região brasileira
+esfera	Esfera administrativa
+ano	Ano do concurso
+vagas	Quantidade de vagas
+salario	Salário inicial
+inscricao_inicio	Data inicial das inscrições
+inscricao_fim	Data final das inscrições
+data_prova	Data da prova
+url_edital	Link do edital
+Saída gerada
+
+O pipeline gera arquivos JSON na pasta:
+
+data/raw/
+
+O nome do arquivo segue o padrão:
+
+concursos_raw_YYYY_MM_DD_HH_MM_SS.json
+
+Cada arquivo gerado contém metadados da extração, como:
+
+Metadado	Descrição
+source	Origem dos dados
+extraction_datetime	Data e hora da extração
+records_count	Quantidade de registros extraídos
+data	Lista de concursos extraídos
+Importância da etapa
+
+A etapa de extração representa o início do pipeline de dados.
+
+Ela garante que os dados sejam capturados e armazenados em sua forma bruta antes de qualquer transformação.
+
+Essa prática é comum em arquiteturas de dados, pois permite rastreabilidade, auditoria e reprocessamento dos dados caso necessário.
+
+
+Também atualize a seção **Etapas Concluídas** adicionando:
+
+```md
+| Criação do pipeline de extração | Concluído |
+| Geração de dados brutos em JSON | Concluído |
+| Criação de amostra em `data/sample` | Concluído |
+```
+
 ## Próximas Etapas
 
-- Criar pipeline de extração com dados simulados em JSON.
-- Salvar os dados brutos na pasta data/raw.
+As próximas etapas do projeto serão:
+
 - Criar processo de transformação e padronização dos dados.
-- Carregar os dados tratados no PostgreSQL.
-- Criar consultas SQL analíticas.
-- Construir dashboard com indicadores.
-- Expandir a coleta para fontes reais.
+- Ler os arquivos brutos da pasta `data/raw`.
+- Gerar dados tratados na pasta `data/processed`.
+- Criar processo de carga automatizada no PostgreSQL.
+- Criar consultas analíticas.
+- Criar dashboard com indicadores.
+- Expandir o projeto para coleta de dados reais.
 - Finalizar relatório técnico.
 
 ## Diferenciais do Projeto
