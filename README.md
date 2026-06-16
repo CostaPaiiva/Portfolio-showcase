@@ -434,7 +434,8 @@ Tabelas encontradas no banco:
 | Pipeline de carga | Concluído |
 | Carga nas dimensões | Concluído |
 | Carga na tabela fato | Concluído |
-| Consultas analíticas SQL | Pendente |
+| Consultas analíticas SQL | Concluído |
+| View analítica para BI | Concluído |
 | Dashboard | Pendente |
 | Relatório final | Em andamento |
 
@@ -634,6 +635,34 @@ Depois vamos atualizar o `relatorio.md` completo com a mesma formatação bonita
 
 ```text
 Pipeline de Carga
+
+## Consultas Analíticas SQL
+
+As consultas analíticas foram organizadas na pasta:
+
+```text
+sql/analytics/
+
+Essa camada tem como objetivo responder perguntas de negócio e validar os dados carregados no Data Warehouse.
+
+Consultas criadas
+Arquivo	Objetivo
+01_kpis_gerais.sql	Indicadores gerais
+02_analise_por_banca.sql	Análise por banca
+03_analise_por_estado.sql	Análise por estado
+04_analise_por_cargo.sql	Análise por cargo
+05_top_salarios.sql	Top concursos por salário
+06_evolucao_por_ano.sql	Evolução anual
+07_visao_completa_concursos.sql	Visão completa dos concursos
+08_create_view_concursos_analytics.sql	Criação da view analítica
+09_kpis_view_analytics.sql	KPIs usando a view
+Executar uma consulta
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/01_kpis_gerais.sql
+View analítica
+
+Foi criada a view:
+
+vw_concursos_analytics
 
 ## Próximas Etapas
 
