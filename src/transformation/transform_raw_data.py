@@ -1,7 +1,11 @@
+# Módulo nativo para manipulação e leitura de arquivos no formato JSON
 import json
+# Módulo nativo para manipulação e extração de datas e horas
 from datetime import datetime
+# Módulo nativo para manipulação de caminhos de arquivos e diretórios de forma segura
 from pathlib import Path
 
+# Biblioteca externa principal para manipulação, limpeza e análise de dados estruturados (DataFrames)
 import pandas as pd
 
 

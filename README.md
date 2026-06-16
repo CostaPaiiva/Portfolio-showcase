@@ -429,7 +429,8 @@ Tabelas encontradas no banco:
 | Script de teste de conexão | Concluído |
 | Pipeline de extração | Concluído |
 | Geração de dados brutos em JSON | Concluído |
-| Pipeline de transformação | Pendente |
+| Pipeline de transformação | Concluído |
+| Geração de dados tratados em CSV | Concluído |
 | Carga automatizada | Pendente |
 | Dashboard | Pendente |
 | Relatório final | Em andamento |
@@ -504,6 +505,100 @@ Também atualize a seção **Etapas Concluídas** adicionando:
 | Criação do pipeline de extração | Concluído |
 | Geração de dados brutos em JSON | Concluído |
 | Criação de amostra em `data/sample` | Concluído |
+```
+## Pipeline de Transformação
+
+O pipeline de transformação foi implementado no arquivo:
+
+```text
+src/transformation/transform_raw_data.py
+
+Nesta etapa, o script lê o arquivo JSON mais recente da pasta data/raw, aplica padronizações e salva os dados tratados em data/processed.
+
+Transformações realizadas
+Transformação	Descrição
+Leitura do JSON bruto	Busca automaticamente o arquivo mais recente em data/raw
+Validação de colunas	Verifica se todos os campos obrigatórios existem
+Padronização textual	Remove espaços extras e normaliza campos
+Padronização de cargos	Cria a coluna cargo_padronizado
+Padronização de bancas	Cria a coluna banca_padronizada
+Conversão de tipos	Converte ano, vagas, salário e datas
+Faixa salarial	Cria a coluna salario_faixa
+Cálculo de dias	Cria a coluna dias_inscricao
+Registro de transformação	Cria a coluna data_transformacao
+Executar transformação
+python src/transformation/transform_raw_data.py
+Saída esperada
+Transformação concluída com sucesso!
+Registros transformados: 6
+Arquivo tratado gerado: data/processed/concursos_processed_YYYY_MM_DD_HH_MM_SS.csv
+
+Para demonstração no GitHub, foi criado o arquivo:
+
+data/sample/concursos_processed_sample.csv
+
+Atenção: ao colar no README, se o bloco de código quebrar por causa dos blocos internos, me mande que eu ajusto o README completo depois.
+
+---
+
+# 8. Atualizar o relatório
+
+Depois vamos atualizar o relatório completo, mas já deixe anotado que entrou uma nova etapa:
+
+```md
+## Pipeline de Transformação
+
+Nesta etapa foi implementado o pipeline de transformação dos dados brutos.
+
+O script responsável é:
+
+```text
+src/transformation/transform_raw_data.py
+
+Esse pipeline lê o arquivo JSON mais recente da pasta data/raw, valida sua estrutura, aplica padronizações e salva os dados tratados em formato CSV na pasta data/processed.
+
+Transformações aplicadas
+Transformação	Descrição
+Validação de colunas obrigatórias	Garante que os campos esperados estejam presentes
+Padronização textual	Remove espaços extras e normaliza campos de texto
+Padronização de cargos	Agrupa nomes semelhantes em categorias analíticas
+Padronização de bancas	Corrige variações de nomes das bancas
+Conversão de tipos	Converte campos numéricos e datas
+Classificação salarial	Cria faixas salariais
+Cálculo de período de inscrição	Calcula os dias entre início e fim das inscrições
+Registro da transformação	Adiciona data e hora da transformação
+Saída gerada
+
+O arquivo tratado é salvo em:
+
+data/processed/
+
+Com o padrão de nome:
+
+concursos_processed_YYYY_MM_DD_HH_MM_SS.csv
+
+Essa etapa representa a camada de dados processados do projeto, preparando as informações para carga no Data Warehouse.
+
+
+---
+
+# 9. Rodar tudo em sequência
+
+Agora você pode rodar o fluxo completo até aqui:
+
+```bash
+python src/extraction/extract_sample_data.py
+python src/transformation/transform_raw_data.py
+
+Depois confira:
+
+ls data/raw
+ls data/processed
+
+No Windows CMD:
+
+dir data\raw
+dir data\processed
 ```
 
 ## Próximas Etapas
