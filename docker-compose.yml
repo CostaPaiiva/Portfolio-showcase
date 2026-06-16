@@ -1,35 +1,55 @@
+# Define os serviços que compõem a aplicação
 services:
   # Serviço de banco de dados PostgreSQL
   postgres:
+    # Utiliza a imagem oficial do PostgreSQL na versão 16 disponível no Docker Hub
     image: postgres:16
+    # Nome personalizado para o container, facilitando a identificação (ex: ao usar 'docker ps')
     container_name: concursos_postgres
+    # Política de reinício: o container sempre será reiniciado caso falhe ou o Docker seja reiniciado
     restart: always
+    # Variáveis de ambiente para configurar as credenciais e o banco inicial
     environment:
-      POSTGRES_USER: concursos_user
-      POSTGRES_PASSWORD: concursos_pass
-      POSTGRES_DB: concursos_dw
+      POSTGRES_USER: concursos_user       # Cria o usuário administrador do banco
+      POSTGRES_PASSWORD: concursos_pass   # Define a senha do usuário administrador
+      POSTGRES_DB: concursos_dw           # Cria automaticamente um banco de dados com este nome
+    # Mapeamento de portas no formato "porta_do_host:porta_do_container"
+    # Permite acessar o banco na máquina local através da porta 5432
     ports:
       - "5432:5432"
+    # Mapeamento de volumes para persistir dados e carregar scripts
     volumes:
+      # Mapeia o volume nomeado 'postgres_data' para manter os dados salvos mesmo se o container for deletado
       - postgres_data:/var/lib/postgresql/data
+      # Mapeia a pasta local './sql' para dentro do container.
+      # Qualquer script .sql aqui será executado automaticamente na primeira vez que o banco for criado.
       - ./sql:/docker-entrypoint-initdb.d
 
-  # Serviço de interface administrativa do banco
+  # Serviço de interface administrativa do banco (pgAdmin)
   pgadmin:
+    # Utiliza a imagem oficial do pgAdmin 4
     image: dpage/pgadmin4
+    # Nome do container para o pgAdmin
     container_name: concursos_pgadmin
+    # Política de reinício
     restart: always
+    # Variáveis de ambiente para configurar a conta de acesso à interface web do pgAdmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: concursos
-      PGADMIN_DEFAULT_PASSWORD: concursos
+      PGADMIN_DEFAULT_EMAIL: concursos    # Email utilizado para fazer login no painel
+      PGADMIN_DEFAULT_PASSWORD: concursos # Senha utilizada para fazer login no painel
+    # Mapeamento de portas
+    # Permite acessar a interface do pgAdmin no navegador através de 'http://localhost:8080'
     ports:
       - "8080:80"
+    # Ordem de inicialização: garante que o pgAdmin só inicie APÓS o container do PostgreSQL estar pronto
     depends_on:
       - postgres
 
+# Declaração dos volumes nomeados utilizados no arquivo
 volumes:
+  # Cria o volume 'postgres_data' gerenciado pelo Docker para armazenar os dados do banco de forma segura
   postgres_data:
 
-#Esse arquivo vai subir:
-#PostgreSQL → banco de dados principal
-#pgAdmin → painel visual para acessar o banco
+# Resumo da infraestrutura que este arquivo vai subir:
+# 1. PostgreSQL → O banco de dados principal (Data Warehouse)
+# 2. pgAdmin → Um painel visual acessível pelo navegador para gerenciar o banco de dados
