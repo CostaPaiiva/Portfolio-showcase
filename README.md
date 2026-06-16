@@ -431,7 +431,10 @@ Tabelas encontradas no banco:
 | Geração de dados brutos em JSON | Concluído |
 | Pipeline de transformação | Concluído |
 | Geração de dados tratados em CSV | Concluído |
-| Carga automatizada | Pendente |
+| Pipeline de carga | Concluído |
+| Carga nas dimensões | Concluído |
+| Carga na tabela fato | Concluído |
+| Consultas analíticas SQL | Pendente |
 | Dashboard | Pendente |
 | Relatório final | Em andamento |
 
@@ -600,6 +603,37 @@ No Windows CMD:
 dir data\raw
 dir data\processed
 ```
+## Pipeline de Carga
+
+O pipeline de carga foi implementado no arquivo:
+
+```text
+src/loading/load_processed_data.py
+
+Nesta etapa, o script lê o arquivo CSV mais recente da pasta data/processed e carrega as informações no PostgreSQL.
+
+Processo de carga
+Etapa	Descrição
+Leitura do CSV tratado	Busca automaticamente o arquivo mais recente em data/processed
+Inserção de dimensões	Popula dim_banca, dim_estado, dim_cargo e dim_orgao
+Busca de chaves	Recupera os IDs das dimensões
+Inserção na fato	Popula a tabela fato_concurso
+Controle básico de duplicidade	Evita inserir registros repetidos com mesma banca, estado, cargo, órgão, ano e edital
+Executar carga
+python src/loading/load_processed_data.py
+Executar ETL completo
+python src/extraction/extract_sample_data.py
+python src/transformation/transform_raw_data.py
+python src/loading/load_processed_data.py
+
+---
+
+# 7. Atualizar o relatório depois
+
+Depois vamos atualizar o `relatorio.md` completo com a mesma formatação bonita, incluindo a nova seção:
+
+```text
+Pipeline de Carga
 
 ## Próximas Etapas
 
