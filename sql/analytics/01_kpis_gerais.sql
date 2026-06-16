@@ -3,6 +3,9 @@
 -- Objetivo: Consultar indicadores gerais do Data Warehouse.
 -- ============================================================
 
+-- Seleciona os principais KPIs (Indicadores Chave de Performance) gerais dos concursos.
+-- Conta o total de concursos, soma as vagas, calcula o salário médio, menor e maior salário.
+-- Também conta o número distinto de bancas, estados, cargos e órgãos presentes nos dados.
 SELECT
     COUNT(*) AS total_concursos,
     SUM(f.vagas) AS total_vagas,
