@@ -35,8 +35,8 @@ services:
     restart: always
     # Variáveis de ambiente para configurar a conta de acesso à interface web do pgAdmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: concursos    # Email utilizado para fazer login no painel
-      PGADMIN_DEFAULT_PASSWORD: concursos # Senha utilizada para fazer login no painel
+      PGADMIN_DEFAULT_EMAIL: admin@concursos.com    # Email utilizado para fazer login no painel
+      PGADMIN_DEFAULT_PASSWORD: admin123 # Senha utilizada para fazer login no painel
     # Mapeamento de portas
     # Permite acessar a interface do pgAdmin no navegador através de 'http://localhost:8080'
     ports:
