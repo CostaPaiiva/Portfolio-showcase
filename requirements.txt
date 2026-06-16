@@ -1,0 +1,14 @@
+# tratar dados
+pandas
+# buscar dados da internet
+requests
+# web scraping
+beautifulsoup4
+# ler variáveis do .env
+python-dotenv
+# conectar Python com banco
+sqlalchemy
+# driver PostgreSQL
+psycopg2-binary
+# análises exploratórias
+jupyter
