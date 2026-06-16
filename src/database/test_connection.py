@@ -1,7 +1,6 @@
 from sqlalchemy import text
 
-from connection import get_engine
-
+from src.database.connection import get_engine
 
 def test_connection() -> None:
     """
