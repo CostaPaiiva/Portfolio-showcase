@@ -15,6 +15,8 @@ def get_sample_concursos_data() -> list[dict]:
     - Portais de concursos
     """
 
+    # Lista de dicionários contendo os dados brutos (mock) de concursos públicos.
+    # Cada dicionário simula um registro retornado de uma fonte externa (ex: API, raspagem de site).
     concursos = [
         {
             "orgao": "TCE-PI",
@@ -128,13 +130,22 @@ def save_raw_data(data: list[dict]) -> Path:
     Salva os dados brutos extraídos em formato JSON.
     """
 
+    # Resolve o caminho base do projeto subindo dois diretórios a partir do arquivo atual (src/extraction/)
     project_root = Path(__file__).resolve().parents[2]
+    
+    # Define o diretório de destino onde os dados "raw" (brutos) serão armazenados
     raw_dir = project_root / "data" / "raw"
+    
+    # Cria o diretório de destino caso ele não exista
     raw_dir.mkdir(parents=True, exist_ok=True)
 
+    # Gera uma string com a data e hora atual para evitar sobrescrever extrações anteriores
     extraction_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    
+    # Define o nome e o caminho final do arquivo JSON de saída
     output_file = raw_dir / f"concursos_raw_{extraction_date}.json"
 
+    # Encapsula os dados reais e metadados úteis (origem, hora da extração e total de registros)
     metadata = {
         "source": "sample_data",
         "extraction_datetime": datetime.now().isoformat(),
@@ -142,6 +153,7 @@ def save_raw_data(data: list[dict]) -> Path:
         "data": data,
     }
 
+    # Salva o dicionário no arquivo com indentação de 4 espaços para legibilidade e preservando caracteres Unicode
     with open(output_file, "w", encoding="utf-8") as file:
         json.dump(metadata, file, ensure_ascii=False, indent=4)
 
@@ -155,7 +167,10 @@ def main() -> None:
 
     print("Iniciando extração de dados simulados...")
 
+    # 1. Realiza a coleta dos dados simulados
     concursos_data = get_sample_concursos_data()
+    
+    # 2. Salva os dados coletados na camada raw
     output_file = save_raw_data(concursos_data)
 
     print("Extração concluída com sucesso!")
@@ -164,4 +179,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Garante que o script será executado apenas se rodado diretamente (e não se for importado como um módulo)
     main()
