@@ -13,3 +13,8 @@ data/warehouse/*
 
 postgres_data/
 .vscode/
+
+# Ambientes virtuais Python
+.venv/
+venv/
+env/
