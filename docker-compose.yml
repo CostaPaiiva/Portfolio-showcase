@@ -1,0 +1,31 @@
+services:
+postgres:
+  image: postgres:16
+  container_name: postgres: concursos_postgres
+  restart: always
+  environment:
+    POSTGRES_USER: concursos_user
+    POSTGRES_PASSWORD: concursos_pass
+    POSTGRES_DB: concursos_dw
+  ports:
+    - "5432:5432"
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+    - ./sql:/docker-entrypoint-initdb.d
+
+pgadmin:
+  image: dpage/pgadmin4
+  container_name: concursos_pgadmin
+  restart: always
+  environment:
+    PGADMIN_DEFAULT_EMAIL: concursos
+    PGADMIN_DEFAULT_PASSWORD: concursos
+  ports:
+    - "8080:80"
+  depends_on:
+    - postgres
+
+volumes:
+  postgres_data:
+
+  #
