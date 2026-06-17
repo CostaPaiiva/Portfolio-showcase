@@ -9,22 +9,51 @@ Plataforma de Inteligência para Concursos Públicos
 
 
 
-Projeto de Engenharia de Dados desenvolvido para coletar, tratar, armazenar, analisar e visualizar dados de concursos públicos, com foco em cargos de Tecnologia da Informação, Ciência de Dados, Engenharia de Dados e áreas correlatas.
+Sobre o Projeto
 
-A solução simula um fluxo real de dados, contemplando:
+A Plataforma de Inteligência para Concursos Públicos é um projeto de Engenharia de Dados desenvolvido para coletar, tratar, armazenar, analisar e visualizar dados de concursos públicos.
 
-Extração de dados.
-Armazenamento em camada raw.
-Transformação com Pandas.
-Carga em PostgreSQL.
-Modelagem dimensional.
-Consultas analíticas SQL.
-View consolidada para BI.
-Dashboard interativo com Streamlit e Plotly.
+O projeto simula um fluxo real de dados, desde a geração dos dados brutos até a visualização em um dashboard interativo.
+
+O foco principal está em concursos voltados para áreas como:
+
+Tecnologia da Informação;
+Ciência de Dados;
+Engenharia de Dados;
+Análise de Dados;
+Desenvolvimento de Sistemas;
+Áreas correlatas de tecnologia no setor público.
+Resultado Final
+
+O projeto entrega uma solução completa com:
+
+Entrega	Descrição
+Pipeline de Extração	Geração de dados brutos em JSON
+Pipeline de Transformação	Limpeza, padronização e enriquecimento dos dados
+Pipeline de Carga	Inserção dos dados tratados no PostgreSQL
+Data Warehouse	Modelo dimensional com tabela fato e dimensões
+SQL Analytics	Consultas analíticas para KPIs e rankings
+View Analítica	View consolidada para consumo em BI
+Dashboard	Interface visual com Streamlit e Plotly
+Documentação	README e relatório técnico para portfólio
+Demonstração do Dashboard
+
+Abaixo estão algumas telas do dashboard desenvolvido com Streamlit e Plotly.
+
+Visão Geral
+Indicadores e Gráficos
+Filtros Interativos
+Análises Visuais
+
+Caso alguma imagem não apareça no GitHub, verifique se o nome do arquivo na pasta dashboards/ está exatamente igual ao caminho usado no README.
+
 Sumário
-Objetivo
+Sobre o Projeto
+Resultado Final
+Demonstração do Dashboard
 Problema de Negócio
-Arquitetura do Projeto
+Objetivos
+Arquitetura da Solução
 Tecnologias Utilizadas
 Estrutura de Pastas
 Modelo de Dados
@@ -33,56 +62,67 @@ Consultas Analíticas SQL
 Dashboard Analítico
 Como Executar o Projeto
 Status do Projeto
+Competências Demonstradas
 Próximas Melhorias
 Autor
-Objetivo
+Problema de Negócio
+
+As informações sobre concursos públicos estão distribuídas em diversas fontes, como:
+
+Sites de bancas organizadoras;
+Portais institucionais;
+Portais de notícias;
+Editais em PDF;
+Diários oficiais;
+Agregadores de concursos.
+
+Essa dispersão dificulta análises consolidadas, como comparar salários, identificar bancas mais frequentes, acompanhar oportunidades por estado e entender tendências da área pública para profissionais de tecnologia.
+
+Este projeto propõe centralizar esses dados em um Data Warehouse, permitindo consultas analíticas e visualização de indicadores em um dashboard.
+
+Objetivos
 
 Construir uma plataforma analítica capaz de responder perguntas como:
 
-Pergunta	Valor Gerado
+Pergunta Analítica	Valor Gerado
 Quais bancas mais organizam concursos de TI?	Direcionamento de estudos
 Quais estados possuem os melhores salários?	Comparação de oportunidades
 Quais cargos aparecem com maior frequência?	Identificação de tendências
 Quais órgãos mais ofertam vagas de tecnologia?	Priorização de editais
 Como os salários evoluem ao longo dos anos?	Análise histórica
 Quais concursos possuem maior remuneração?	Apoio à tomada de decisão
-Problema de Negócio
-
-As informações sobre concursos públicos estão espalhadas em diferentes fontes, como sites de bancas, portais institucionais, páginas de notícias e editais em PDF.
-
-Essa dispersão dificulta análises consolidadas, como comparar salários, identificar bancas mais frequentes, acompanhar oportunidades por estado e entender tendências da área pública para profissionais de tecnologia.
-
-Este projeto propõe centralizar esses dados em um Data Warehouse, permitindo consultas analíticas e visualização de indicadores em um dashboard.
-
-Arquitetura do Projeto
+Quais regiões concentram mais oportunidades?	Análise geográfica
+Arquitetura da Solução
 Fontes de Dados
       ↓
 Extração com Python
       ↓
-Data Lake Raw
+Camada Raw — JSON
       ↓
 Transformação com Pandas
       ↓
-Dados Processados
+Camada Processed — CSV
       ↓
 Carga no PostgreSQL
       ↓
 Data Warehouse
       ↓
-Consultas SQL e View Analítica
+Consultas SQL
+      ↓
+View Analítica
       ↓
 Dashboard Streamlit
-Camadas implementadas
+Camadas Implementadas
 Camada	Status	Descrição
-Estrutura de projeto	Concluída	Organização profissional do repositório
+Estrutura do Projeto	Concluída	Organização profissional do repositório
 Banco PostgreSQL	Concluído	Banco local executando via Docker
-pgAdmin	Concluído	Interface gráfica para administração
-Modelo dimensional	Concluído	Tabelas dimensão e tabela fato
+pgAdmin	Concluído	Interface gráfica para administração do banco
+Modelo Dimensional	Concluído	Tabelas dimensão e tabela fato
 Extração	Concluída	Geração de dados brutos em JSON
 Transformação	Concluída	Limpeza, padronização e enriquecimento
-Carga	Concluída	Inserção no PostgreSQL
+Carga	Concluída	Inserção dos dados tratados no PostgreSQL
 SQL Analytics	Concluído	Consultas analíticas organizadas
-View BI	Concluída	View vw_concursos_analytics
+View Analítica	Concluída	View vw_concursos_analytics
 Dashboard	Concluído	Interface interativa com Streamlit
 Tecnologias Utilizadas
 Tecnologia	Finalidade
@@ -104,6 +144,12 @@ plataforma-inteligencia-concursos/
 │
 ├── dashboard/
 │   └── app.py
+│
+├── dashboards/
+│   ├── dashboard_home.png
+│   ├── dashboard_graficos.png
+│   ├── dashboard_filtros.png
+│   └── dashboard_graficos2.png
 │
 ├── data/
 │   ├── raw/
@@ -143,8 +189,6 @@ plataforma-inteligencia-concursos/
 │   ├── 01_create_tables.sql
 │   └── 02_insert_sample_data.sql
 │
-├── dashboards/
-│
 ├── docker-compose.yml
 ├── .env.example
 ├── .gitignore
@@ -158,16 +202,30 @@ dim_banca   dim_estado   dim_cargo   dim_orgao
      \          |           |           /
       \         |           |          /
               fato_concurso
-Tabela fato
+Tabela Fato
 Tabela	Descrição
 fato_concurso	Armazena os eventos principais dos concursos
-Tabelas dimensão
+Tabelas Dimensão
 Tabela	Descrição
 dim_banca	Informações das bancas organizadoras
-dim_estado	Informações dos estados
-dim_cargo	Informações dos cargos
-dim_orgao	Informações dos órgãos públicos
+dim_estado	Informações dos estados e regiões
+dim_cargo	Informações dos cargos, áreas e níveis
+dim_orgao	Informações dos órgãos públicos e esferas administrativas
+Principais Métricas
+Métrica	Descrição
+vagas	Quantidade de vagas ofertadas
+salario	Salário inicial
+ano	Ano do concurso
+data_prova	Data prevista da prova
 Pipeline ETL
+
+O projeto implementa um fluxo completo de Extração, Transformação e Carga.
+
+Extract
+   ↓
+Transform
+   ↓
+Load
 Extração
 
 Arquivo:
@@ -214,10 +272,8 @@ src/loading/load_processed_data.py
 
 Responsável por carregar os dados tratados no PostgreSQL.
 
-Processo:
-
 Etapa	Descrição
-Leitura do CSV tratado	Busca arquivo mais recente em data/processed
+Leitura do CSV tratado	Busca o arquivo mais recente em data/processed
 Carga nas dimensões	Popula dim_banca, dim_estado, dim_cargo e dim_orgao
 Busca de IDs	Recupera chaves dimensionais
 Carga na fato	Popula fato_concurso
@@ -237,13 +293,13 @@ Arquivo	Objetivo
 07_visao_completa_concursos.sql	Visão completa dos concursos
 08_create_view_concursos_analytics.sql	Criação da view analítica
 09_kpis_view_analytics.sql	KPIs usando a view
-View analítica
+View Analítica
 
 Foi criada a view:
 
 vw_concursos_analytics
 
-Essa view consolida a tabela fato e as dimensões, servindo como base para consultas e dashboard.
+Essa view consolida a tabela fato e as dimensões, servindo como base para consultas, ferramentas de BI e dashboard.
 
 Dashboard Analítico
 
@@ -256,7 +312,7 @@ dashboard/app.py
 Ele consome diretamente a view:
 
 vw_concursos_analytics
-Funcionalidades do dashboard
+Funcionalidades
 Recurso	Descrição
 KPIs principais	Total de concursos, vagas, média salarial e maior salário
 Filtros interativos	Estado, banca, ano, nível, área e região
@@ -327,7 +383,7 @@ docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/a
 8. Executar o dashboard
 streamlit run dashboard/app.py
 
-Acesse:
+Acesse no navegador:
 
 http://localhost:8501
 Status do Projeto
@@ -347,6 +403,23 @@ View analítica para BI	Concluído
 Dashboard Streamlit	Concluído
 Relatório técnico	Concluído
 Versão 1.0 para portfólio	Concluído
+Competências Demonstradas
+
+Este projeto demonstra conhecimentos práticos em:
+
+Competência	Aplicação
+Engenharia de Dados	Construção de pipeline completo
+Python	Scripts de extração, transformação e carga
+Pandas	Tratamento e padronização dos dados
+SQL	Consultas analíticas e modelagem
+PostgreSQL	Data Warehouse relacional
+Docker	Ambiente local reprodutível
+SQLAlchemy	Integração entre Python e banco
+Modelagem Dimensional	Esquema estrela
+Streamlit	Dashboard interativo
+Plotly	Gráficos interativos
+Git e GitHub	Versionamento e portfólio
+Documentação Técnica	README e relatório do projeto
 Próximas Melhorias
 Melhoria	Descrição
 Coleta real	Buscar dados em páginas públicas ou APIs
@@ -357,43 +430,8 @@ Testes automatizados	Criar validações com pytest
 Deploy do dashboard	Publicar em ambiente gratuito
 Qualidade de dados	Adicionar checks de consistência
 CI/CD	Automatizar validações no GitHub Actions
-Diferenciais do Projeto
-
-Este projeto demonstra conhecimentos práticos em:
-
-Engenharia de Dados.
-Organização de projeto profissional.
-Docker e ambientes reprodutíveis.
-Banco de dados PostgreSQL.
-Modelagem dimensional.
-SQL analítico.
-Python aplicado a dados.
-Pandas.
-SQLAlchemy.
-ETL completo.
-View analítica para BI.
-Dashboard interativo.
-Documentação técnica.
-Versionamento com Git e GitHub.
 Autor
-## Demonstração do Dashboard
-
-### Visão Geral
-
-![Dashboard Home](dashboards/dashboard_home.png)
-
-### Indicadores Principais
-
-![Dashboard Graficos](dashboards/dashboard_graficos.png)
-
-### Filtros Interativos
-
-![Dashboard Filtros](dashboards/dashboard_filtros.png)
-
-### Gráficos Analíticos
-
-![Dashboard Gráficos](dashboards/dashboard_graficos2.png)
 
 Projeto desenvolvido como parte de um portfólio profissional de Engenharia de Dados.
 
-Área de foco: Engenharia de Dados, Ciência de Dados, Análise de Dados, Inteligência Artificial e Desenvolvimento de Soluções com Dados
+Áreas de foco: Engenharia de Dados, Ciência de Dados, Análise de Dados, Inteligência Artificial e Desenvolvimento de Soluções com Dados.
