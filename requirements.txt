@@ -12,3 +12,5 @@ sqlalchemy
 psycopg2-binary
 # análises exploratórias
 jupyter
+streamlit
+plotly

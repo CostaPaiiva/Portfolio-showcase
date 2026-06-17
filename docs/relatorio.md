@@ -7,6 +7,7 @@ Relatório Técnico — Plataforma de Inteligência para Concursos Públicos
 
 
 
+
 Sumário
 1. Visão Geral
 2. Problema de Negócio
@@ -21,14 +22,16 @@ Sumário
 11. Conexão Python com PostgreSQL
 12. Pipeline de Extração
 13. Pipeline de Transformação
-14. Dependências Python
-15. Etapas Concluídas
-16. Comandos Utilizados
-17. Próximas Etapas
-18. Considerações Parciais
+14. Pipeline de Carga
+15. Consultas Analíticas SQL
+16. Dependências Python
+17. Etapas Concluídas
+18. Comandos Utilizados
+19. Próximas Etapas
+20. Considerações Parciais
 1. Visão Geral
 
-A Plataforma de Inteligência para Concursos Públicos é um projeto de Engenharia de Dados desenvolvido com o objetivo de coletar, organizar, transformar e analisar dados relacionados a concursos públicos, especialmente na área de Tecnologia da Informação.
+A Plataforma de Inteligência para Concursos Públicos é um projeto de Engenharia de Dados desenvolvido com o objetivo de coletar, organizar, transformar, carregar e analisar dados relacionados a concursos públicos, especialmente na área de Tecnologia da Informação.
 
 O projeto simula um ambiente real de dados, utilizando conceitos como:
 
@@ -37,12 +40,13 @@ ETL	Extração, transformação e carga dos dados
 Data Warehouse	Armazenamento analítico no PostgreSQL
 Modelagem dimensional	Esquema estrela com tabela fato e dimensões
 Docker	Ambiente local reprodutível
-SQL	Criação de tabelas e consultas analíticas
+SQL	Criação de tabelas, views e consultas analíticas
 Python	Desenvolvimento dos pipelines
 Pandas	Tratamento e padronização dos dados
+SQLAlchemy	Integração entre Python e PostgreSQL
 Documentação técnica	Registro das decisões e etapas do projeto
 
-A proposta é construir uma solução capaz de centralizar dados de concursos públicos e permitir análises estratégicas sobre oportunidades, salários, bancas, cargos, órgãos e distribuição geográfica.
+A proposta é construir uma solução capaz de centralizar dados de concursos públicos e permitir análises estratégicas sobre oportunidades, salários, bancas, cargos, órgãos, estados e evolução temporal.
 
 2. Problema de Negócio
 
@@ -66,6 +70,7 @@ Quais órgãos mais ofertam vagas de TI?	Priorização de editais
 Como os salários evoluem ao longo dos anos?	Análise de valorização da área
 Quais regiões concentram mais oportunidades?	Visão geográfica do mercado público
 Quais concursos possuem maior quantidade de vagas?	Priorização de oportunidades
+Quais concursos apresentam os maiores salários?	Apoio à tomada de decisão
 
 Sem uma solução centralizada, essas informações precisam ser consultadas manualmente, tornando o processo lento, repetitivo e sujeito a erros.
 
@@ -87,7 +92,9 @@ Criar pipeline de transformação com Pandas.
 Padronizar cargos, bancas, datas e campos numéricos.
 Gerar dados tratados em formato CSV.
 Criar pipeline de carga no PostgreSQL.
-Desenvolver consultas analíticas em SQL.
+Popular dimensões e tabela fato.
+Criar consultas analíticas em SQL.
+Criar view consolidada para ferramentas de BI.
 Criar dashboards para visualização dos indicadores.
 Documentar todas as etapas do projeto.
 4. Tecnologias Utilizadas
@@ -96,7 +103,7 @@ Python	Desenvolvimento dos pipelines ETL
 PostgreSQL	Banco de dados analítico
 Docker	Criação do ambiente local
 Docker Compose	Orquestração dos serviços
-SQL	Criação de tabelas, consultas e modelagem
+SQL	Criação de tabelas, consultas, views e análises
 Pandas	Tratamento e manipulação de dados
 SQLAlchemy	Conexão entre Python e PostgreSQL
 psycopg2	Driver PostgreSQL para Python
@@ -115,9 +122,13 @@ Data Lake Raw
       ↓
 Transformação e Padronização
       ↓
-Data Warehouse PostgreSQL
+Dados Processados
       ↓
-Consultas SQL
+Carga no PostgreSQL
+      ↓
+Data Warehouse
+      ↓
+Consultas SQL e View Analítica
       ↓
 Dashboard Analítico
 5.1 Descrição das Camadas
@@ -127,11 +138,13 @@ Extração	Coleta dos dados com Python	Concluída
 Data Lake Raw	Armazenamento dos dados brutos	Concluído
 Transformação	Limpeza e padronização dos dados	Concluída
 Dados Processados	Arquivos tratados em CSV	Concluído
-Data Warehouse	Banco analítico PostgreSQL	Parcialmente concluído
-Consultas SQL	Análises sobre os dados	Pendente
+Carga	Inserção dos dados tratados no PostgreSQL	Concluída
+Data Warehouse	Banco analítico com fato e dimensões	Concluído
+Consultas SQL	Análises sobre os dados	Concluída
+View Analítica	Consolidação para BI	Concluída
 Dashboard	Visualização dos indicadores	Pendente
 
-Até esta etapa, o projeto já possui a estrutura base, o ambiente Docker, o banco PostgreSQL, o modelo dimensional, a conexão Python, o pipeline de extração e o pipeline de transformação.
+Até esta etapa, o projeto já possui um fluxo ETL completo, com extração, transformação, carga no PostgreSQL e consultas analíticas SQL.
 
 6. Estrutura do Projeto
 plataforma-inteligencia-concursos/
@@ -155,7 +168,8 @@ plataforma-inteligencia-concursos/
 │   │   ├── __init__.py
 │   │   └── transform_raw_data.py
 │   ├── loading/
-│   │   └── __init__.py
+│   │   ├── __init__.py
+│   │   └── load_processed_data.py
 │   ├── database/
 │   │   ├── __init__.py
 │   │   ├── connection.py
@@ -165,6 +179,17 @@ plataforma-inteligencia-concursos/
 │   └── __init__.py
 │
 ├── sql/
+│   ├── analytics/
+│   │   ├── README.md
+│   │   ├── 01_kpis_gerais.sql
+│   │   ├── 02_analise_por_banca.sql
+│   │   ├── 03_analise_por_estado.sql
+│   │   ├── 04_analise_por_cargo.sql
+│   │   ├── 05_top_salarios.sql
+│   │   ├── 06_evolucao_por_ano.sql
+│   │   ├── 07_visao_completa_concursos.sql
+│   │   ├── 08_create_view_concursos_analytics.sql
+│   │   └── 09_kpis_view_analytics.sql
 │   ├── 01_create_tables.sql
 │   └── 02_insert_sample_data.sql
 │
@@ -188,7 +213,8 @@ src/transformation	Scripts de transformação
 src/loading	Scripts de carga
 src/database	Conexão com o banco
 src/utils	Funções auxiliares
-sql	Scripts SQL
+sql	Scripts SQL estruturais
+sql/analytics	Consultas SQL analíticas
 dashboards	Dashboards e imagens analíticas
 7. Ambiente Docker
 
@@ -359,7 +385,7 @@ A função principal criada foi:
 
 get_engine()
 
-Essa função retorna uma engine SQLAlchemy, que será reutilizada nas próximas etapas do projeto para executar consultas, inserir dados e carregar informações no Data Warehouse.
+Essa função retorna uma engine SQLAlchemy, que é reutilizada nas etapas de carga e validação do banco.
 
 11.1 Teste de Conexão
 
@@ -378,14 +404,6 @@ Tabelas encontradas no banco:
 - dim_estado
 - dim_orgao
 - fato_concurso
-
-Esse teste confirma que:
-
-O container PostgreSQL está funcionando.
-O banco concursos_dw foi criado corretamente.
-As tabelas foram criadas pelos scripts SQL.
-O Python consegue se conectar ao banco.
-A configuração do .env está correta.
 12. Pipeline de Extração
 
 Nesta etapa foi criado o primeiro pipeline de extração do projeto.
@@ -404,9 +422,6 @@ Páginas institucionais.
 Editais em PDF.
 Portais agregadores de concursos.
 12.1 Funcionamento do Pipeline
-
-O script executa as seguintes etapas:
-
 Etapa	Descrição
 Simulação da coleta	Cria uma lista de concursos com dados estruturados
 Geração de metadados	Adiciona origem, data/hora e quantidade de registros
@@ -415,29 +430,7 @@ Armazenamento raw	Grava o arquivo na pasta data/raw
 
 O pipeline foi desenvolvido para representar a camada raw de uma arquitetura de dados.
 
-Nessa camada, os dados são armazenados em seu formato original, sem transformações ou padronizações complexas.
-
-12.2 Dados Extraídos
-
-Os dados simulados possuem informações como:
-
-Campo	Descrição
-orgao	Órgão responsável pelo concurso
-cargo	Cargo ofertado
-area	Área de atuação
-nivel	Nível exigido
-banca	Banca organizadora
-estado	Estado do concurso
-regiao	Região brasileira
-esfera	Esfera administrativa
-ano	Ano do concurso
-vagas	Quantidade de vagas
-salario	Salário inicial
-inscricao_inicio	Data inicial das inscrições
-inscricao_fim	Data final das inscrições
-data_prova	Data da prova
-url_edital	Link do edital
-12.3 Saída Gerada
+12.2 Saída Gerada
 
 O pipeline gera arquivos JSON na pasta:
 
@@ -454,67 +447,23 @@ source	Origem dos dados
 extraction_datetime	Data e hora da extração
 records_count	Quantidade de registros extraídos
 data	Lista de concursos extraídos
-
-Exemplo simplificado da estrutura gerada:
-
-{
-    "source": "sample_data",
-    "extraction_datetime": "2026-06-16T00:00:00",
-    "records_count": 6,
-    "data": [
-        {
-            "orgao": "TCE-PI",
-            "cargo": "Auditor de Controle Externo - Tecnologia da Informação",
-            "area": "TI",
-            "nivel": "Superior",
-            "banca": "FGV",
-            "estado": "PI",
-            "regiao": "Nordeste",
-            "esfera": "Estadual",
-            "ano": 2026,
-            "vagas": 10,
-            "salario": 18000.00
-        }
-    ]
-}
-12.4 Arquivo de Amostra para Portfólio
+12.3 Arquivo de Amostra para Portfólio
 
 Como os arquivos gerados em data/raw são ignorados pelo Git, foi criada a pasta:
 
 data/sample/
 
-Essa pasta armazena uma pequena amostra versionável dos dados extraídos.
-
-O objetivo é permitir que recrutadores e avaliadores visualizem o formato dos dados sem precisar executar o pipeline imediatamente.
-
 Arquivo de exemplo:
 
 data/sample/concursos_sample.json
 
-Essa prática é útil em projetos de portfólio, pois melhora a compreensão do fluxo de dados e demonstra preocupação com documentação e reprodutibilidade.
-
-12.5 Importância da Etapa
-
-A etapa de extração representa o início do pipeline de dados.
-
-Ela garante que os dados sejam capturados e armazenados em sua forma bruta antes de qualquer transformação.
-
-Essa prática é comum em arquiteturas de dados porque permite:
-
-Benefício	Descrição
-Rastreabilidade	Permite identificar a origem dos dados
-Auditoria	Facilita validação posterior
-Reprocessamento	Possibilita executar novamente as transformações
-Separação de responsabilidades	Mantém extração e transformação independentes
-Organização	Estrutura o fluxo ETL de forma clara
-
-Com essa etapa concluída, o projeto passa a ter um fluxo inicial de ingestão de dados, preparando a base para a próxima fase: transformação e padronização.
+Essa prática permite que recrutadores visualizem o formato dos dados sem precisar executar o pipeline imediatamente.
 
 13. Pipeline de Transformação
 
 Nesta etapa foi implementado o pipeline de transformação dos dados brutos extraídos na etapa anterior.
 
-O script responsável por essa etapa é:
+O script responsável é:
 
 src/transformation/transform_raw_data.py
 
@@ -522,11 +471,7 @@ Esse pipeline tem como objetivo ler o arquivo JSON mais recente da pasta data/ra
 
 13.1 Objetivo da Transformação
 
-A etapa de transformação é responsável por converter os dados brutos em uma estrutura mais limpa, consistente e adequada para análise.
-
-Enquanto a camada raw preserva os dados em seu formato original, a camada processed contém dados tratados e preparados para as próximas etapas do pipeline.
-
-Nesta fase, os dados passam por processos como:
+A etapa de transformação converte os dados brutos em uma estrutura mais limpa, consistente e adequada para análise.
 
 Processo	Descrição
 Validação	Verificação da existência dos campos obrigatórios
@@ -535,17 +480,12 @@ Conversão de tipos	Ajuste de campos numéricos e datas
 Enriquecimento	Criação de novas colunas analíticas
 Persistência	Salvamento dos dados tratados em CSV
 13.2 Funcionamento do Pipeline
-
-O pipeline executa as seguintes etapas:
-
 Etapa	Descrição
 Busca do arquivo bruto	Localiza automaticamente o JSON mais recente em data/raw
 Leitura dos dados	Lê o conteúdo da chave data do arquivo JSON
 Validação estrutural	Confere se todas as colunas obrigatórias existem
 Transformação dos dados	Aplica regras de limpeza, padronização e enriquecimento
 Salvamento processado	Gera um arquivo CSV tratado em data/processed
-
-O script foi desenvolvido para ser executado após o pipeline de extração.
 
 Fluxo executado até esta etapa:
 
@@ -556,33 +496,7 @@ Arquivo JSON em data/raw
 Transformação com Pandas
    ↓
 Arquivo CSV em data/processed
-13.3 Campos Obrigatórios Validados
-
-Antes de transformar os dados, o pipeline verifica se todas as colunas esperadas estão presentes.
-
-Campo	Descrição
-orgao	Órgão responsável pelo concurso
-cargo	Cargo ofertado
-area	Área de atuação
-nivel	Nível exigido
-banca	Banca organizadora
-estado	Unidade federativa
-regiao	Região brasileira
-esfera	Esfera administrativa
-ano	Ano do concurso
-vagas	Quantidade de vagas
-salario	Salário inicial
-inscricao_inicio	Data inicial das inscrições
-inscricao_fim	Data final das inscrições
-data_prova	Data da prova
-url_edital	Link do edital
-
-Caso algum campo obrigatório esteja ausente, o script interrompe a execução e informa quais colunas estão faltando.
-
-13.4 Transformações Aplicadas
-
-As principais transformações realizadas foram:
-
+13.3 Transformações Aplicadas
 Transformação	Descrição
 Padronização textual	Remove espaços extras dos campos de texto
 Padronização de cargos	Cria uma categoria analítica para cargos semelhantes
@@ -592,48 +506,14 @@ Conversão de datas	Converte datas de inscrição e prova
 Criação de faixa salarial	Classifica salários em intervalos analíticos
 Cálculo de dias de inscrição	Calcula a duração do período de inscrição
 Registro da transformação	Adiciona data e hora da transformação
-13.5 Colunas Criadas
-
-Durante a transformação, foram criadas novas colunas para facilitar análises futuras.
-
+13.4 Colunas Criadas
 Coluna	Descrição
 cargo_padronizado	Categoria padronizada do cargo
 banca_padronizada	Nome padronizado da banca
 salario_faixa	Classificação do salário em faixas
 dias_inscricao	Quantidade de dias entre início e fim das inscrições
 data_transformacao	Data e hora da execução do pipeline
-13.6 Exemplo de Padronização de Cargos
-Cargo Original	Cargo Padronizado
-Auditor de Controle Externo - Tecnologia da Informação	AUDITOR_TI
-Analista de Tecnologia da Informação	ANALISTA_TI
-Técnico de Informática	TECNICO_INFORMATICA
-Analista de Dados	ANALISTA_DADOS
-Auditor Fiscal - Tecnologia da Informação	AUDITOR_TI
-
-Essa padronização permite agrupar cargos semelhantes mesmo quando aparecem com nomes diferentes nos editais.
-
-13.7 Exemplo de Padronização de Bancas
-Banca Original	Banca Padronizada
-FGV	FGV
-Cebraspe	CEBRASPE
-CESPE	CEBRASPE
-FCC	FCC
-Fundação Carlos Chagas	FCC
-AOCP	INSTITUTO AOCP
-Instituto AOCP	INSTITUTO AOCP
-
-Essa padronização reduz inconsistências nos dados e melhora a qualidade das análises.
-
-13.8 Exemplo de Faixa Salarial
-Salário	Faixa Salarial
-R$ 6.500,00	Até 7 mil
-R$ 9.500,00	De 7 mil a 12 mil
-R$ 13.500,00	De 12 mil a 18 mil
-R$ 21.000,00	Acima de 18 mil
-
-A criação de faixas salariais facilita análises comparativas e construção de dashboards.
-
-13.9 Saída Gerada
+13.5 Saída Gerada
 
 O pipeline gera arquivos tratados na pasta:
 
@@ -643,46 +523,222 @@ O nome do arquivo segue o padrão:
 
 concursos_processed_YYYY_MM_DD_HH_MM_SS.csv
 
-Exemplo de execução:
+Arquivo de amostra versionável:
 
+data/sample/concursos_processed_sample.csv
+14. Pipeline de Carga
+
+Nesta etapa foi implementado o pipeline de carga dos dados tratados no PostgreSQL.
+
+O script responsável é:
+
+src/loading/load_processed_data.py
+
+Esse pipeline lê o arquivo CSV mais recente da pasta data/processed, insere registros nas tabelas dimensão, recupera os IDs das dimensões e carrega os dados na tabela fato fato_concurso.
+
+14.1 Objetivo da Carga
+
+A etapa de carga representa a fase final do processo ETL.
+
+Ela é responsável por persistir os dados tratados no Data Warehouse, permitindo consultas analíticas e futura integração com ferramentas de BI.
+
+Processo	Descrição
+Leitura do CSV tratado	Busca automaticamente o arquivo mais recente em data/processed
+Inserção nas dimensões	Popula tabelas dim_banca, dim_estado, dim_cargo e dim_orgao
+Busca de chaves	Recupera os IDs das dimensões
+Inserção na fato	Popula a tabela fato_concurso
+Controle de duplicidade	Evita inserir registros repetidos
+14.2 Fluxo de Carga
+Arquivo CSV em data/processed
+      ↓
+Leitura com Pandas
+      ↓
+Inserção nas dimensões
+      ↓
+Busca dos IDs dimensionais
+      ↓
+Inserção na fato_concurso
+      ↓
+Data Warehouse atualizado
+14.3 Dimensões Carregadas
+Tabela	Dados Inseridos
+dim_banca	Bancas organizadoras padronizadas
+dim_estado	Estados e regiões
+dim_cargo	Cargos, áreas e níveis
+dim_orgao	Órgãos e esferas administrativas
+14.4 Tabela Fato Carregada
+
+A tabela fato_concurso recebe os eventos principais do concurso.
+
+Informação	Origem
+IDs das dimensões	Consultas nas tabelas dimensão
+Ano	CSV tratado
+Vagas	CSV tratado
+Salário	CSV tratado
+Período de inscrição	CSV tratado
+Data da prova	CSV tratado
+URL do edital	CSV tratado
+14.5 Controle Básico de Duplicidade
+
+O pipeline utiliza uma verificação básica antes da inserção na tabela fato.
+
+A combinação considerada para evitar duplicidade é:
+
+Campo
+id_banca
+id_estado
+id_cargo
+id_orgao
+ano
+url_edital
+
+Caso um registro com essa combinação já exista, ele não é inserido novamente.
+
+14.6 Execução da Carga
+
+Executar apenas a carga:
+
+python src/loading/load_processed_data.py
+
+Executar o ETL completo:
+
+python src/extraction/extract_sample_data.py
 python src/transformation/transform_raw_data.py
+python src/loading/load_processed_data.py
 
 Resultado esperado:
 
-Iniciando transformação dos dados...
-Arquivo bruto encontrado: data/raw/concursos_raw_YYYY_MM_DD_HH_MM_SS.json
+Iniciando carga dos dados no PostgreSQL...
+Arquivo tratado encontrado: data/processed/concursos_processed_YYYY_MM_DD_HH_MM_SS.csv
 Registros lidos: 6
-Transformação concluída com sucesso!
-Registros transformados: 6
-Arquivo tratado gerado: data/processed/concursos_processed_YYYY_MM_DD_HH_MM_SS.csv
-13.10 Arquivo de Amostra para Portfólio
+Dimensões carregadas com sucesso!
+Tabela fato carregada com sucesso!
+Novos registros inseridos na fato_concurso: 6
 
-Como os arquivos da pasta data/processed são ignorados pelo Git, foi criado um arquivo de amostra na pasta data/sample.
+Se o processo for executado novamente, a quantidade de novos registros pode ser 0, indicando que a proteção contra duplicidade funcionou.
 
-Arquivo de exemplo:
+15. Consultas Analíticas SQL
 
-data/sample/concursos_processed_sample.csv
+Após a carga dos dados no Data Warehouse, foram criadas consultas SQL analíticas para responder perguntas de negócio.
 
-Esse arquivo permite que recrutadores visualizem o formato dos dados tratados sem precisar executar o pipeline.
+As consultas ficam organizadas na pasta:
 
-A existência de amostras versionadas melhora a compreensão do projeto no GitHub e demonstra organização no fluxo de dados.
+sql/analytics/
+15.1 Objetivo da Camada Analítica
 
-13.11 Importância da Etapa
+A camada analítica tem como objetivo facilitar a exploração dos dados e preparar a base para construção de dashboards.
 
-A etapa de transformação é uma das fases mais importantes em projetos de Engenharia de Dados.
+Ela permite analisar:
 
-Ela garante que os dados estejam consistentes, padronizados e preparados para serem carregados no Data Warehouse.
+Indicadores gerais.
+Concursos por banca.
+Concursos por estado.
+Concursos por cargo.
+Maiores salários.
+Evolução anual.
+Visão consolidada dos concursos.
+15.2 Arquivos Criados
+Arquivo	Objetivo
+01_kpis_gerais.sql	Indicadores gerais do Data Warehouse
+02_analise_por_banca.sql	Análise de concursos por banca organizadora
+03_analise_por_estado.sql	Análise de concursos por estado e região
+04_analise_por_cargo.sql	Análise de concursos por cargo
+05_top_salarios.sql	Lista dos concursos com maiores salários
+06_evolucao_por_ano.sql	Evolução anual de concursos, vagas e salários
+07_visao_completa_concursos.sql	Consulta completa com todas as dimensões
+08_create_view_concursos_analytics.sql	Criação da view analítica consolidada
+09_kpis_view_analytics.sql	KPIs usando a view analítica
+15.3 KPIs Gerais
 
-Com essa etapa concluída, o projeto passa a possuir duas camadas funcionais do pipeline ETL:
+A consulta 01_kpis_gerais.sql calcula indicadores gerais como:
 
-Camada	Status
-Extração	Concluída
-Transformação	Concluída
-Carga	Próxima etapa
+Indicador	Descrição
+total_concursos	Quantidade de concursos carregados
+total_vagas	Soma total de vagas
+salario_medio	Média salarial
+menor_salario	Menor salário registrado
+maior_salario	Maior salário registrado
+total_bancas	Quantidade de bancas distintas
+total_estados	Quantidade de estados distintos
+total_cargos	Quantidade de cargos distintos
+total_orgaos	Quantidade de órgãos distintos
+15.4 Análises por Dimensão
 
-A próxima fase será responsável por carregar os dados tratados no PostgreSQL, completando o fluxo Extract, Transform and Load.
+Foram criadas consultas específicas para análise por dimensão.
 
-14. Dependências Python
+Dimensão	Consulta	Perguntas Respondidas
+Banca	02_analise_por_banca.sql	Quais bancas mais aparecem? Quais possuem maior salário médio?
+Estado	03_analise_por_estado.sql	Quais estados têm mais vagas e maiores salários?
+Cargo	04_analise_por_cargo.sql	Quais cargos pagam melhor? Quais têm mais vagas?
+Ano	06_evolucao_por_ano.sql	Como concursos, vagas e salários evoluem ao longo do tempo?
+15.5 Top Salários
+
+A consulta 05_top_salarios.sql lista os concursos com maiores salários.
+
+Ela retorna informações como:
+
+Campo	Descrição
+Órgão	Instituição responsável
+Cargo	Cargo ofertado
+Área	Área de atuação
+Nível	Nível exigido
+Banca	Banca organizadora
+Estado	Unidade federativa
+Região	Região brasileira
+Ano	Ano do concurso
+Vagas	Quantidade de vagas
+Salário	Salário inicial
+Data da prova	Data prevista
+URL do edital	Link de referência
+
+Essa consulta é útil para dashboards e análises exploratórias.
+
+15.6 View Analítica
+
+Foi criada a view:
+
+vw_concursos_analytics
+
+Essa view consolida os dados da tabela fato com todas as dimensões.
+
+Ela foi definida no arquivo:
+
+sql/analytics/08_create_view_concursos_analytics.sql
+15.7 Finalidade da View
+
+A view vw_concursos_analytics facilita o consumo dos dados por ferramentas de BI.
+
+Benefício	Descrição
+Simplificação	Evita repetir joins em todas as consultas
+Reutilização	Pode ser usada em dashboards e análises
+Organização	Centraliza a visão analítica dos concursos
+Integração	Facilita conexão com Power BI, Metabase ou Superset
+
+Exemplo de consulta usando a view:
+
+SELECT
+    COUNT(*) AS total_concursos,
+    SUM(vagas) AS total_vagas,
+    ROUND(AVG(salario), 2) AS salario_medio
+FROM vw_concursos_analytics;
+15.8 Execução das Consultas
+
+Exemplo usando Docker:
+
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/01_kpis_gerais.sql
+
+Exemplo no PowerShell:
+
+Get-Content sql/analytics/01_kpis_gerais.sql | docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw
+
+Criar a view analítica:
+
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/08_create_view_concursos_analytics.sql
+
+Testar a view:
+
+SELECT * FROM vw_concursos_analytics LIMIT 10;
+16. Dependências Python
 
 As dependências iniciais do projeto foram registradas no arquivo requirements.txt.
 
@@ -693,7 +749,7 @@ python-dotenv
 sqlalchemy
 psycopg2-binary
 jupyter
-14.1 Finalidade das Dependências
+16.1 Finalidade das Dependências
 Biblioteca	Finalidade
 pandas	Tratamento e manipulação de dados
 requests	Requisições HTTP
@@ -702,7 +758,7 @@ python-dotenv	Leitura de variáveis de ambiente
 sqlalchemy	Conexão e interação com banco de dados
 psycopg2-binary	Driver PostgreSQL
 jupyter	Análises exploratórias
-15. Etapas Concluídas
+17. Etapas Concluídas
 Etapa	Status
 Criação da estrutura inicial do projeto	Concluído
 Criação das pastas principais	Concluído
@@ -712,7 +768,7 @@ Configuração do pgAdmin	Concluído
 Criação do arquivo .env.example	Concluído
 Criação do arquivo .gitignore	Concluído
 Criação do arquivo requirements.txt	Concluído
-Criação dos scripts SQL	Concluído
+Criação dos scripts SQL estruturais	Concluído
 Criação das tabelas dimensionais	Concluído
 Criação da tabela fato	Concluído
 Inserção de dados simulados no banco	Concluído
@@ -728,10 +784,17 @@ Conversão de tipos e datas	Concluído
 Criação de variáveis analíticas	Concluído
 Geração de dados tratados em CSV	Concluído
 Criação de amostra tratada em data/sample	Concluído
-Atualização do README	Concluído
+Criação do pipeline de carga	Concluído
+Carga nas tabelas dimensão	Concluído
+Carga na tabela fato	Concluído
+Controle básico de duplicidade	Concluído
+Criação das consultas analíticas SQL	Concluído
+Criação da view vw_concursos_analytics	Concluído
+Criação do README da pasta sql/analytics	Concluído
+Atualização do README principal	Concluído
 Atualização do relatório técnico	Concluído
-16. Comandos Utilizados
-16.1 Docker
+18. Comandos Utilizados
+18.1 Docker
 
 Subir os containers:
 
@@ -744,7 +807,7 @@ docker ps
 Acessar PostgreSQL via terminal:
 
 docker exec -it concursos_postgres psql -U concursos_user -d concursos_dw
-16.2 PostgreSQL
+18.2 PostgreSQL
 
 Listar tabelas:
 
@@ -754,10 +817,22 @@ Consultar tabela fato:
 
 SELECT * FROM fato_concurso;
 
+Contar registros nas tabelas:
+
+SELECT COUNT(*) FROM dim_banca;
+SELECT COUNT(*) FROM dim_estado;
+SELECT COUNT(*) FROM dim_cargo;
+SELECT COUNT(*) FROM dim_orgao;
+SELECT COUNT(*) FROM fato_concurso;
+
+Testar view analítica:
+
+SELECT * FROM vw_concursos_analytics LIMIT 10;
+
 Sair do PostgreSQL:
 
 \q
-16.3 Python
+18.3 Python
 
 Criar ambiente virtual:
 
@@ -777,8 +852,7 @@ pip install -r requirements.txt
 
 Testar conexão Python:
 
-cd src/database
-python test_connection.py
+python src/database/test_connection.py
 
 Executar pipeline de extração:
 
@@ -788,56 +862,69 @@ Executar pipeline de transformação:
 
 python src/transformation/transform_raw_data.py
 
-Executar fluxo completo até a transformação:
+Executar pipeline de carga:
+
+python src/loading/load_processed_data.py
+
+Executar ETL completo:
 
 python src/extraction/extract_sample_data.py
 python src/transformation/transform_raw_data.py
+python src/loading/load_processed_data.py
+18.4 Consultas Analíticas
 
-Verificar arquivo bruto gerado no Linux, macOS ou Git Bash:
+Executar KPIs gerais:
 
-ls data/raw
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/01_kpis_gerais.sql
 
-Verificar arquivo bruto gerado no Windows CMD:
+Executar análise por banca:
 
-dir data\raw
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/02_analise_por_banca.sql
 
-Verificar arquivo tratado gerado no Linux, macOS ou Git Bash:
+Executar análise por estado:
 
-ls data/processed
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/03_analise_por_estado.sql
 
-Verificar arquivo tratado gerado no Windows CMD:
+Executar top salários:
 
-dir data\processed
-17. Próximas Etapas
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/05_top_salarios.sql
+
+Criar view analítica:
+
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/08_create_view_concursos_analytics.sql
+
+Executar KPIs usando a view:
+
+docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/09_kpis_view_analytics.sql
+19. Próximas Etapas
 
 As próximas etapas do projeto serão:
 
 Próxima Etapa	Descrição
-Carga no PostgreSQL	Inserir os dados tratados no Data Warehouse
-Inserção nas dimensões	Popular dim_banca, dim_estado, dim_cargo e dim_orgao
-Inserção na tabela fato	Popular fato_concurso com os IDs das dimensões
-Tratamento de duplicidades	Evitar registros repetidos no banco
-Consultas analíticas	Criar queries para análise
-Dashboard	Visualizar indicadores do projeto
+Dashboard	Criar visualizações com os principais indicadores
+Imagens do dashboard	Salvar evidências na pasta dashboards
+Consultas adicionais	Criar análises por região, esfera e nível
 Coleta real	Expandir para fontes públicas reais
-Relatório final	Documentar todas as etapas concluídas
-18. Considerações Parciais
+Automação	Futuramente orquestrar o pipeline
+Relatório final	Documentar o projeto completo
+README final	Melhorar apresentação para portfólio
+20. Considerações Parciais
 
-Até esta etapa, o projeto já possui uma base sólida para evolução.
+Até esta etapa, o projeto já possui uma base sólida e funcional de Engenharia de Dados.
 
-A estrutura criada permite organizar o fluxo completo de Engenharia de Dados, desde a entrada dos dados brutos até a futura geração de dashboards.
+A estrutura criada permite organizar o fluxo completo, desde a entrada dos dados brutos até a análise em SQL.
 
 A utilização de Docker facilita a reprodução do ambiente, enquanto o PostgreSQL permite armazenar os dados em um modelo analítico estruturado.
 
-A conexão Python com PostgreSQL prepara o projeto para as próximas etapas de ETL, nas quais os dados serão extraídos, transformados e carregados automaticamente no Data Warehouse.
+Com a criação do pipeline de extração, o projeto passou a executar uma etapa prática do fluxo de dados. Os dados brutos são gerados em JSON, armazenados na camada raw e documentados com metadados de extração.
 
-Com a criação do pipeline de extração, o projeto deixou de ser apenas uma estrutura estática e passou a executar uma etapa prática do fluxo de dados. Os dados brutos são gerados em JSON, armazenados na camada raw e documentados com metadados de extração.
+Com a criação do pipeline de transformação, os dados brutos passaram a ser lidos, validados, padronizados e enriquecidos, gerando uma versão tratada em CSV.
 
-Com a criação do pipeline de transformação, o projeto passa a contar com uma etapa essencial do processo ETL. Os dados brutos extraídos em JSON são lidos, validados, padronizados e enriquecidos, gerando uma versão tratada em CSV. Essa camada processada prepara os dados para a próxima etapa do projeto: a carga no PostgreSQL.
+Com a criação do pipeline de carga, o projeto completou o fluxo ETL, carregando os dados tratados no PostgreSQL, populando tabelas dimensão e tabela fato.
 
-A transformação com Pandas demonstra competências práticas importantes em Engenharia de Dados, como validação de schema, conversão de tipos, padronização textual, criação de variáveis analíticas e organização de dados em camadas.
+Com a criação das consultas analíticas SQL e da view vw_concursos_analytics, o Data Warehouse passou a responder perguntas de negócio e ficou preparado para integração com ferramentas de BI.
 
-Esse projeto também já demonstra competências importantes para portfólio, como:
+Esse projeto demonstra competências importantes para portfólio, como:
 
 Organização de repositório.
 Documentação técnica.
@@ -846,8 +933,13 @@ SQL.
 Docker.
 Python.
 Pandas.
+SQLAlchemy.
 Integração com PostgreSQL.
 Modelagem dimensional.
 Pipeline de extração.
 Pipeline de transformação.
+Pipeline de carga.
+ETL completo.
+Criação de consultas analíticas.
+Criação de view para BI.
 Boas práticas de Engenharia de Dados.
