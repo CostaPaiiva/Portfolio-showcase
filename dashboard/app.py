@@ -13,6 +13,7 @@ from sqlalchemy import text
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
+# Garante que a pasta raiz do projeto esteja no path do Python.
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
@@ -41,8 +42,10 @@ def load_data() -> pd.DataFrame:
     Carrega os dados da view analítica criada na Parte 6.
     """
 
+    # Reaproveita a engine centralizada no módulo de conexão.
     engine = get_engine()
 
+    # Consulta somente os campos usados pelo dashboard.
     query = text("""
         SELECT
             id_concurso,
@@ -74,6 +77,7 @@ def load_data() -> pd.DataFrame:
 try:
     df = load_data()
 except Exception as error:
+    # Interrompe a aplicação com uma mensagem clara se a consulta falhar.
     st.error("Erro ao carregar dados da view `vw_concursos_analytics`.")
     st.warning(
         "Verifique se o PostgreSQL está rodando, se o ETL foi executado "
@@ -88,6 +92,7 @@ except Exception as error:
 # ============================================================
 
 if df.empty:
+    # Evita renderizar gráficos vazios quando a view não retorna linhas.
     st.warning("A view `vw_concursos_analytics` não retornou dados.")
     st.stop()
 
@@ -100,6 +105,7 @@ df["salario"] = pd.to_numeric(df["salario"], errors="coerce")
 df["vagas"] = pd.to_numeric(df["vagas"], errors="coerce")
 df["ano"] = pd.to_numeric(df["ano"], errors="coerce")
 
+# Converte datas para formato datetime para permitir filtros e análises futuras.
 df["inscricao_inicio"] = pd.to_datetime(df["inscricao_inicio"], errors="coerce")
 df["inscricao_fim"] = pd.to_datetime(df["inscricao_fim"], errors="coerce")
 df["data_prova"] = pd.to_datetime(df["data_prova"], errors="coerce")
@@ -118,6 +124,7 @@ niveis = sorted(df["nivel"].dropna().unique())
 areas = sorted(df["area"].dropna().unique())
 regioes = sorted(df["regiao"].dropna().unique())
 
+# Cada multiselect usa a lista completa como padrão para exibir o universo total.
 estado_selecionado = st.sidebar.multiselect(
     "Estado",
     options=estados,
@@ -156,6 +163,7 @@ regiao_selecionada = st.sidebar.multiselect(
 
 
 df_filtrado = df[
+    # Aplica todos os filtros de forma combinada para atualizar KPIs e gráficos.
     (df["sigla_estado"].isin(estado_selecionado))
     & (df["nome_banca"].isin(banca_selecionada))
     & (df["ano"].astype("Int64").isin(ano_selecionado))
@@ -196,6 +204,7 @@ def format_currency(value: float) -> str:
     Formata valores monetários no padrão brasileiro.
     """
 
+    # Normaliza nulos para evitar quebra na renderização dos KPIs.
     if pd.isna(value):
         return "R$ 0,00"
 
@@ -221,6 +230,7 @@ col_grafico1, col_grafico2 = st.columns(2)
 with col_grafico1:
     st.subheader("Concursos por Estado")
 
+    # Agrupa por UF para medir a concentração de concursos por estado.
     concursos_estado = (
         df_filtrado
         .groupby("sigla_estado", as_index=False)
@@ -247,6 +257,7 @@ with col_grafico1:
 with col_grafico2:
     st.subheader("Concursos por Banca")
 
+    # Mostra as bancas com maior volume de concursos.
     concursos_banca = (
         df_filtrado
         .groupby("nome_banca", as_index=False)
@@ -282,6 +293,7 @@ col_grafico3, col_grafico4 = st.columns(2)
 with col_grafico3:
     st.subheader("Concursos por Ano")
 
+    # Ordena por ano para evidenciar tendência temporal.
     concursos_ano = (
         df_filtrado
         .dropna(subset=["ano"])
@@ -309,6 +321,7 @@ with col_grafico3:
 with col_grafico4:
     st.subheader("Vagas por Nível")
 
+    # Resume as vagas por nível de escolaridade/qualificação.
     vagas_nivel = (
         df_filtrado
         .groupby("nivel", as_index=False)
@@ -335,6 +348,7 @@ col_grafico5, col_grafico6 = st.columns(2)
 with col_grafico5:
     st.subheader("Salário Médio por Estado")
 
+    # Calcula a média salarial por UF para comparação regional.
     salario_estado = (
         df_filtrado
         .groupby("sigla_estado", as_index=False)
@@ -361,6 +375,7 @@ with col_grafico5:
 with col_grafico6:
     st.subheader("Vagas por Região")
 
+    # Soma as vagas por região administrativa do país.
     vagas_regiao = (
         df_filtrado
         .groupby("regiao", as_index=False)
@@ -395,6 +410,7 @@ col_tabela1, col_tabela2 = st.columns(2)
 with col_tabela1:
     st.subheader("Top 10 Cargos por Vagas")
 
+    # Ranking dos cargos com maior quantidade de vagas.
     top_cargos = (
         df_filtrado
         .groupby("nome_cargo", as_index=False)
@@ -409,6 +425,7 @@ with col_tabela1:
 with col_tabela2:
     st.subheader("Top 10 Maiores Salários")
 
+    # Lista os concursos com maior remuneração na base filtrada.
     top_salarios = (
         df_filtrado[
             [

@@ -24,9 +24,6 @@ Análise de Dados;
 Desenvolvimento de Sistemas;
 Áreas correlatas de tecnologia no setor público.
 Resultado Final
-
-O projeto entrega uma solução completa com:
-
 Entrega	Descrição
 Pipeline de Extração	Geração de dados brutos em JSON
 Pipeline de Transformação	Limpeza, padronização e enriquecimento dos dados
@@ -38,15 +35,12 @@ Dashboard	Interface visual com Streamlit e Plotly
 Documentação	README e relatório técnico para portfólio
 Demonstração do Dashboard
 
-Abaixo estão algumas telas do dashboard desenvolvido com Streamlit e Plotly.
+Os prints abaixo devem estar na pasta dashboard/, conforme sua estrutura atual do projeto.
 
 Visão Geral
 Indicadores e Gráficos
 Filtros Interativos
 Análises Visuais
-
-Caso alguma imagem não apareça no GitHub, verifique se o nome do arquivo na pasta dashboards/ está exatamente igual ao caminho usado no README.
-
 Sumário
 Sobre o Projeto
 Resultado Final
@@ -143,9 +137,7 @@ Estrutura de Pastas
 plataforma-inteligencia-concursos/
 │
 ├── dashboard/
-│   └── app.py
-│
-├── dashboards/
+│   ├── app.py
 │   ├── dashboard_home.png
 │   ├── dashboard_graficos.png
 │   ├── dashboard_filtros.png
@@ -227,30 +219,18 @@ Transform
    ↓
 Load
 Extração
-
-Arquivo:
-
-src/extraction/extract_sample_data.py
-
-Responsável por simular a coleta de dados de concursos públicos e gerar arquivos JSON brutos em:
-
-data/raw/
-
-Também existe uma amostra versionável em:
-
-data/sample/concursos_sample.json
+Item	Descrição
+Arquivo	src/extraction/extract_sample_data.py
+Entrada	Dados simulados de concursos públicos
+Saída	Arquivos JSON na pasta data/raw/
+Amostra	data/sample/concursos_sample.json
 Transformação
-
-Arquivo:
-
-src/transformation/transform_raw_data.py
-
-Responsável por ler o JSON bruto mais recente, validar campos obrigatórios, padronizar dados e gerar um CSV tratado em:
-
-data/processed/
-
-Transformações realizadas:
-
+Item	Descrição
+Arquivo	src/transformation/transform_raw_data.py
+Entrada	JSON bruto mais recente
+Saída	CSV tratado na pasta data/processed/
+Amostra	data/sample/concursos_processed_sample.csv
+Transformações Realizadas
 Transformação	Descrição
 Validação de colunas	Confere campos obrigatórios
 Padronização textual	Remove espaços extras
@@ -260,18 +240,13 @@ Conversão de tipos	Ajusta números e datas
 Faixa salarial	Classifica salários
 Dias de inscrição	Calcula duração do período
 Data de transformação	Registra execução
-
-Amostra versionável:
-
-data/sample/concursos_processed_sample.csv
 Carga
-
-Arquivo:
-
-src/loading/load_processed_data.py
-
-Responsável por carregar os dados tratados no PostgreSQL.
-
+Item	Descrição
+Arquivo	src/loading/load_processed_data.py
+Entrada	CSV tratado mais recente
+Saída	Dados carregados no PostgreSQL
+Destino	Tabelas dimensão e tabela fato
+Processo de Carga
 Etapa	Descrição
 Leitura do CSV tratado	Busca o arquivo mais recente em data/processed
 Carga nas dimensões	Popula dim_banca, dim_estado, dim_cargo e dim_orgao
@@ -305,13 +280,12 @@ Dashboard Analítico
 
 O dashboard foi desenvolvido com Streamlit e Plotly.
 
-Arquivo:
-
-dashboard/app.py
-
-Ele consome diretamente a view:
-
-vw_concursos_analytics
+Item	Descrição
+Arquivo	dashboard/app.py
+Fonte de dados	vw_concursos_analytics
+Framework	Streamlit
+Visualização	Plotly
+Banco	PostgreSQL
 Funcionalidades
 Recurso	Descrição
 KPIs principais	Total de concursos, vagas, média salarial e maior salário
@@ -376,9 +350,6 @@ python src/loading/load_processed_data.py
 6. Criar a view analítica
 docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/08_create_view_concursos_analytics.sql
 7. Executar consultas analíticas
-
-Exemplo:
-
 docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/01_kpis_gerais.sql
 8. Executar o dashboard
 streamlit run dashboard/app.py
@@ -404,9 +375,6 @@ Dashboard Streamlit	Concluído
 Relatório técnico	Concluído
 Versão 1.0 para portfólio	Concluído
 Competências Demonstradas
-
-Este projeto demonstra conhecimentos práticos em:
-
 Competência	Aplicação
 Engenharia de Dados	Construção de pipeline completo
 Python	Scripts de extração, transformação e carga
