@@ -629,10 +629,6 @@ python src/loading/load_processed_data.py
 
 ---
 
-# 7. Atualizar o relatório depois
-
-Depois vamos atualizar o `relatorio.md` completo com a mesma formatação bonita, incluindo a nova seção:
-
 ```text
 Pipeline de Carga
 
@@ -663,6 +659,154 @@ View analítica
 Foi criada a view:
 
 vw_concursos_analytics
+
+
+#### Parte 7 — Dashboard Analítico
+
+Na Parte 7, foi desenvolvido um dashboard interativo utilizando Streamlit e Plotly, conectado diretamente ao banco PostgreSQL.
+
+O dashboard consome a view analítica `vw_concursos_analytics`, criada na Parte 6, e apresenta indicadores e visualizações sobre os concursos públicos carregados no projeto.
+
+### Principais recursos do dashboard
+
+- Total de concursos
+- Total de vagas
+- Média salarial
+- Maior salário
+- Filtros por estado, banca, ano e escolaridade
+- Gráfico de concursos por estado
+- Gráfico de concursos por banca
+- Gráfico de evolução por ano
+- Gráfico de vagas por escolaridade
+- Tabela de cargos com mais vagas
+- Tabela de maiores salários
+- Visualização da base analítica completa
+
+### Tecnologias utilizadas
+
+- Streamlit
+- Plotly
+- Pandas
+- SQLAlchemy
+- PostgreSQL
+- Docker
+
+### Como executar o dashboard
+
+Com o banco PostgreSQL em execução, rode:
+
+```bash
+streamlit run dashboard/app.py
+
+Depois acesse:
+
+http://localhost:8501
+
+---
+
+# 11. Atualizar o `docs/relatorio.md`
+
+Adicione esta nova seção no final do seu `docs/relatorio.md`:
+
+```md
+## Dashboard Analítico
+
+Nesta etapa, foi desenvolvido um dashboard interativo para visualização dos dados processados pela plataforma.
+
+O dashboard foi criado com Streamlit e Plotly, consumindo diretamente os dados da view analítica `vw_concursos_analytics`, criada na etapa anterior.
+
+## Objetivo
+
+O objetivo desta etapa foi transformar os dados estruturados no PostgreSQL em uma interface visual, permitindo a análise dos concursos públicos de forma mais intuitiva e interativa.
+
+Com isso, o projeto passou a contemplar não apenas a construção do pipeline de dados, mas também a entrega de uma camada analítica visual para apoio à tomada de decisão.
+
+## Funcionalidades implementadas
+
+Foram implementados os seguintes recursos:
+
+- Indicadores de total de concursos;
+- Indicador de total de vagas;
+- Média salarial;
+- Maior salário encontrado;
+- Filtros por estado;
+- Filtros por banca organizadora;
+- Filtros por ano;
+- Filtros por escolaridade;
+- Gráfico de concursos por estado;
+- Gráfico de concursos por banca;
+- Gráfico de evolução de concursos por ano;
+- Gráfico de vagas por escolaridade;
+- Tabela com os cargos com maior quantidade de vagas;
+- Tabela com os maiores salários;
+- Visualização da base analítica completa.
+
+## Ferramentas utilizadas
+
+Nesta etapa foram utilizadas as seguintes ferramentas e bibliotecas:
+
+- Streamlit;
+- Plotly;
+- Pandas;
+- SQLAlchemy;
+- PostgreSQL;
+- Python;
+- Docker.
+
+## Integração com o banco de dados
+
+O dashboard foi conectado diretamente ao banco PostgreSQL utilizando SQLAlchemy.
+
+A fonte de dados principal foi a view `vw_concursos_analytics`, que consolida as informações das tabelas fato e dimensão em uma estrutura otimizada para análise.
+
+Essa abordagem evita a repetição de regras de negócio no dashboard, centralizando a lógica analítica no banco de dados.
+
+## Importância para o projeto
+
+A criação do dashboard representa a camada final de consumo dos dados.
+
+Até esta etapa, o projeto contemplava:
+
+1. Extração dos dados;
+2. Transformação dos dados;
+3. Carga no banco PostgreSQL;
+4. Modelagem dimensional;
+5. Consultas analíticas SQL;
+6. Criação de view analítica;
+7. Visualização interativa em dashboard.
+
+Com isso, a plataforma se aproxima de um cenário real de Engenharia de Dados, onde os dados passam por um pipeline completo até serem disponibilizados para análise.
+
+## Resultado final
+
+O resultado desta etapa foi um dashboard funcional, interativo e conectado ao banco de dados, permitindo explorar os dados de concursos públicos por diferentes perspectivas.
+
+Essa entrega fortalece o projeto como peça de portfólio, demonstrando domínio prático de pipeline de dados, SQL, banco relacional, integração com Python e visualização de dados.
+12. Teste rápido de erro comum
+
+Se aparecer erro dizendo que a view não existe:
+
+relation "vw_concursos_analytics" does not exist
+
+Significa que você ainda precisa executar o SQL da Parte 6 que cria a view.
+
+Se aparecer erro de conexão:
+
+connection refused
+
+Confira se o Docker está rodando:
+
+docker compose ps
+
+Se o container do PostgreSQL não estiver ativo, rode:
+
+docker compose up -d
+
+Se aparecer erro de senha ou banco:
+
+password authentication failed
+
+Confira se o .env está igual ao docker-compose.yml.
 
 ## Próximas Etapas
 
