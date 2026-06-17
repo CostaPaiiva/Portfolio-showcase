@@ -34,13 +34,14 @@ View Analítica	View consolidada para consumo em BI
 Dashboard	Interface visual com Streamlit e Plotly
 Documentação	README e relatório técnico para portfólio
 Demonstração do Dashboard
-
-Os prints abaixo devem estar na pasta dashboard/, conforme sua estrutura atual do projeto.
-
 Visão Geral
 Indicadores e Gráficos
 Filtros Interativos
 Análises Visuais
+
+Caso alguma imagem não apareça, confira se o nome do arquivo está exatamente igual ao caminho usado no README.
+Exemplo: dashboard_home.png é diferente de Dashboard_Home.PNG.
+
 Sumário
 Sobre o Projeto
 Resultado Final
