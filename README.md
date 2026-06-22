@@ -39,7 +39,7 @@ This repository is designed to give recruiters a fast, clear view of the work: w
 
 | Strength | Why it matters |
 |---|---|
-| Clear project scope | Recruiters can understand each project in seconds |
+| Clear project scope | be able to understand each project in seconds. |
 | Strong documentation | Easy to review without opening the code first |
 | Practical tooling | Shows hands-on experience with common industry stacks |
 | Reusable structure | Each project is organized like a real deliverable |
