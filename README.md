@@ -70,7 +70,7 @@ Portfolio-showcase/
 3. Inspect the code, notebooks, and artifacts.
 4. Use the README tables to quickly understand scope and value.
 
-## Recruiter highlights
+## highlights
 
 - Clear documentation and project boundaries
 - Fast-to-scan summaries for each project
