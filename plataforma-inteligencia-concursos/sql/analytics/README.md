@@ -2,6 +2,21 @@
 
 Esta pasta reúne as consultas SQL usadas para análise dos dados carregados no Data Warehouse do projeto.
 
+<p>
+  <img alt="SQL" src="https://img.shields.io/badge/SQL-Analytics-informational">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Queries-blue">
+  <img alt="Data Warehouse" src="https://img.shields.io/badge/Data%20Warehouse-Views-success">
+</p>
+
+## At a glance
+
+| Signal | Value |
+|---|---|
+| Focus | Business queries for public exam analytics |
+| Main stack | SQL and PostgreSQL |
+| Output | KPIs, views, and comparative analysis |
+| Strength | Reusable analytical layer |
+
 ## Objetivo
 
 Organizar consultas analíticas que respondem perguntas de negócio sobre concursos públicos, como volume de vagas, salários, bancas mais recorrentes e evolução por ano.
@@ -27,4 +42,3 @@ Exemplo com Docker:
 ```bash
 docker exec -i concursos_postgres psql -U concursos_user -d concursos_dw < sql/analytics/01_kpis_gerais.sql
 ```
-
