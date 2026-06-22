@@ -196,7 +196,7 @@ streamlit run dashboard/app.py
 - presentation-ready dashboard
 - strong fit for a professional portfolio
 
-## Recruiter-friendly notes
+## notes
 
 - The project shows practical data engineering, not only SQL queries.
 - The dashboard makes the data story easy to scan quickly.
