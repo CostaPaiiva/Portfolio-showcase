@@ -185,7 +185,7 @@ streamlit run app.py
 - applicable to both classification and regression
 - useful artifacts for technical presentation
 
-## Recruiter-friendly notes
+## Notes
 
 - The project shows end-to-end product thinking, not only model training.
 - The interface makes the workflow easy to understand without reading code first.
