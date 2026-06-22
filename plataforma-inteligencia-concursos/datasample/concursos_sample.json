@@ -1,0 +1,40 @@
+{
+    "source": "sample_data",
+    "records_count": 2,
+    "data": [
+        {
+            "orgao": "TCE-PI",
+            "cargo": "Auditor de Controle Externo - Tecnologia da Informação",
+            "area": "TI",
+            "nivel": "Superior",
+            "banca": "FGV",
+            "estado": "PI",
+            "regiao": "Nordeste",
+            "esfera": "Estadual",
+            "ano": 2026,
+            "vagas": 10,
+            "salario": 18000.00,
+            "inscricao_inicio": "2026-06-01",
+            "inscricao_fim": "2026-07-01",
+            "data_prova": "2026-08-15",
+            "url_edital": "https://exemplo.com/edital-tce-pi"
+        },
+        {
+            "orgao": "Banco do Brasil",
+            "cargo": "Analista de Tecnologia da Informação",
+            "area": "TI",
+            "nivel": "Superior",
+            "banca": "Cebraspe",
+            "estado": "DF",
+            "regiao": "Centro-Oeste",
+            "esfera": "Federal",
+            "ano": 2026,
+            "vagas": 50,
+            "salario": 9500.00,
+            "inscricao_inicio": "2026-05-10",
+            "inscricao_fim": "2026-06-20",
+            "data_prova": "2026-08-01",
+            "url_edital": "https://exemplo.com/edital-banco-brasil"
+        }
+    ]
+}

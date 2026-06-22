@@ -1,0 +1,3 @@
+orgao,cargo,area,nivel,banca,estado,regiao,esfera,ano,vagas,salario,inscricao_inicio,inscricao_fim,data_prova,url_edital,cargo_padronizado,banca_padronizada,salario_faixa,dias_inscricao,data_transformacao
+TCE-PI,Auditor de Controle Externo - Tecnologia da Informação,TI,Superior,FGV,PI,Nordeste,Estadual,2026,10,18000.0,2026-06-01,2026-07-01,2026-08-15,https://exemplo.com/edital-tce-pi,AUDITOR_TI,FGV,De 12 mil a 18 mil,30,2026-06-16T00:00:00
+Banco do Brasil,Analista de Tecnologia da Informação,TI,Superior,Cebraspe,DF,Centro-Oeste,Federal,2026,50,9500.0,2026-05-10,2026-06-20,2026-08-01,https://exemplo.com/edital-banco-brasil,ANALISTA_TI,CEBRASPE,De 7 mil a 12 mil,41,2026-06-16T00:00:00
