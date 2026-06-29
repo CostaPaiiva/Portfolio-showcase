@@ -17,15 +17,27 @@ warnings.filterwarnings('ignore')
 
 # Importa a biblioteca joblib para serialização de objetos Python (salvar e carregar modelos)
 import joblib
-# Importa a biblioteca Optuna para otimização de hiperparâmetros
-import optuna
-# Importa a biblioteca XGBoost para modelos de gradient boosting
-import xgboost as xgb
-# Importa a biblioteca LightGBM para modelos de gradient boosting
-import lightgbm as lgb
+# Importações opcionais para manter o módulo importável em ambientes reduzidos
+try:
+    import optuna
+except ImportError:  # pragma: no cover
+    optuna = None
 
-# Importa as classes CatBoostClassifier e CatBoostRegressor da biblioteca CatBoost
-from catboost import CatBoostClassifier, CatBoostRegressor
+try:
+    import xgboost as xgb
+except ImportError:  # pragma: no cover
+    xgb = None
+
+try:
+    import lightgbm as lgb
+except ImportError:  # pragma: no cover
+    lgb = None
+
+try:
+    from catboost import CatBoostClassifier, CatBoostRegressor
+except ImportError:  # pragma: no cover
+    CatBoostClassifier = None
+    CatBoostRegressor = None
 # Importa todas as métricas de avaliação do scikit-learn
 from sklearn.metrics import *
 # Importa funções para divisão de dados, validação cruzada e criação de folds do scikit-learn
@@ -114,16 +126,19 @@ class AdvancedModelTrainer:
 
                 'MLPClassifier': MLPClassifier(random_state=42, max_iter=1000),
 
-                'XGBoost': xgb.XGBClassifier(
+                'VotingClassifier': None # Placeholder para ensemble
+            }
+
+            if xgb is not None:
+                models['XGBoost'] = xgb.XGBClassifier(
                     random_state=42,
                     use_label_encoder=False,
                     eval_metric='logloss'
-                ),
-                'LightGBM': lgb.LGBMClassifier(random_state=42, verbose=-1),
-                'CatBoost': CatBoostClassifier(random_state=42, verbose=0),
-
-                'VotingClassifier': None # Placeholder para ensemble
-            }
+                )
+            if lgb is not None:
+                models['LightGBM'] = lgb.LGBMClassifier(random_state=42, verbose=-1)
+            if CatBoostClassifier is not None:
+                models['CatBoost'] = CatBoostClassifier(random_state=42, verbose=0)
 
         # Caso contrário, o problema é de regressão
         else:
@@ -168,12 +183,15 @@ class AdvancedModelTrainer:
                 'KernelRidge': KernelRidge(),
                 'MLPRegressor': MLPRegressor(random_state=42, max_iter=1000),
 
-                'XGBoost': xgb.XGBRegressor(random_state=42),
-                'LightGBM': lgb.LGBMRegressor(random_state=42, verbose=-1),
-                'CatBoost': CatBoostRegressor(random_state=42, verbose=0),
-
                 'VotingRegressor': None # Placeholder para ensemble
             }
+
+            if xgb is not None:
+                models['XGBoost'] = xgb.XGBRegressor(random_state=42)
+            if lgb is not None:
+                models['LightGBM'] = lgb.LGBMRegressor(random_state=42, verbose=-1)
+            if CatBoostRegressor is not None:
+                models['CatBoost'] = CatBoostRegressor(random_state=42, verbose=0)
 
         # Retorna o dicionário de modelos
         return models
