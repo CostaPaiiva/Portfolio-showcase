@@ -15,7 +15,7 @@ class TestReport(unittest.TestCase, AutoMLTestSupport):
         self.tmpdir, self.dataframe, self.csv_path = self.prepare_csv()
         self.addCleanup(self.tmpdir.cleanup)
 
-    def test_report_generation(self):
+    def test_classification_report_generation(self):
         processor = PowerfulDataProcessor(target_column="target", problem_type="auto")
         X_processed, y_processed, problem_type = processor.process(data=pd.read_csv(self.csv_path))
 
@@ -41,7 +41,8 @@ class TestReport(unittest.TestCase, AutoMLTestSupport):
             ).resolve()
 
         self.assertTrue(report_path.exists())
-        self.assertTrue(report_path.suffix in {".pdf", ".txt"})
+        self.assertEqual(report_path.suffix, ".pdf")
+        self.assertTrue(report_path.read_bytes().startswith(b"%PDF"))
 
     def test_regression_report_generation(self):
         tmpdir, dataframe, csv_path = self.prepare_regression_csv()
@@ -58,7 +59,20 @@ class TestReport(unittest.TestCase, AutoMLTestSupport):
         results, _ = trainer.train_models(X_processed, y_processed, optimize_top_n=0)
 
         with self.temporary_cwd(tmpdir.name):
-            report_path = Path(
+            pdf_report_path = Path(
+                PDFReportGenerator.generate_report(
+                    results,
+                    trainer,
+                    problem_type,
+                    {
+                        "dataset_name": "regression_dataset.csv",
+                        "n_samples": len(dataframe),
+                        "n_features": dataframe.shape[1] - 1,
+                    },
+                )
+            ).resolve()
+
+            txt_report_path = Path(
                 PDFReportGenerator.generate_txt_report(
                     results,
                     trainer,
@@ -71,9 +85,14 @@ class TestReport(unittest.TestCase, AutoMLTestSupport):
                 )
             ).resolve()
 
-            content = report_path.read_text(encoding="utf-8").lower()
+            pdf_bytes = pdf_report_path.read_bytes()
+            content = txt_report_path.read_text(encoding="utf-8").lower()
 
-        self.assertTrue(report_path.exists())
+        self.assertTrue(pdf_report_path.exists())
+        self.assertEqual(pdf_report_path.suffix, ".pdf")
+        self.assertTrue(pdf_bytes.startswith(b"%PDF"))
+        self.assertGreater(len(pdf_bytes), 0)
+        self.assertTrue(txt_report_path.exists())
         self.assertIn("r2", content)
         self.assertIn("rmse", content)
         self.assertIn("mae", content)

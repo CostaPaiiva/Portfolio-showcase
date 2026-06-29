@@ -20,8 +20,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 # Importa a biblioteca Time para funcionalidades relacionadas ao tempo, como pausas
 import time
-# Importa a biblioteca Base64 para codificação e decodificação de dados
-import base64
 # Importa a biblioteca Joblib para salvar e carregar modelos de Machine Learning de forma eficiente
 import joblib
 # Importa a classe datetime do módulo datetime para trabalhar com datas e horas
