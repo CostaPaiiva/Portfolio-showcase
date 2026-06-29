@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 
 st.set_page_config(
     page_title="AutoML",
-    page_icon="ðŸ¤–",
+    page_icon="🤖",
     layout="wide"
 )
 
@@ -313,10 +313,10 @@ class UltraRobustApp:
         """Executa a aplicaÃ§Ã£o com tratamento de erros"""
         try:
             # Entrada principal do app.
-            st.title("ðŸ¤– AutoML")
+            st.title("🤖 AutoML")
             st.markdown("""
-            <div class='cv-badge'>âœ… VALIDAÃ‡ÃƒO CRUZADA ATIVADA</div>
-            Sistema profissional com **validaÃ§Ã£o cruzada** e **30+ modelos**!
+            <div class='cv-badge'>OK - VALIDACAO CRUZADA ATIVADA</div>
+            Sistema profissional com validacao cruzada e 30+ modelos!
             """, unsafe_allow_html=True)
 
             self.show_progress()
@@ -345,7 +345,7 @@ class UltraRobustApp:
     def show_progress(self):
         """Barra de progresso simples"""
         # Indicador visual das quatro etapas do pipeline.
-        steps = [" Upload", " Processar", " Treinar", "ðŸ“Š Resultados"]
+        steps = ["Upload", "Processar", "Treinar", "Resultados"]
         current = st.session_state.step - 1
 
         html = """
@@ -354,7 +354,7 @@ class UltraRobustApp:
 
         for i, step in enumerate(steps):
             if i < current:
-                html += f'<div style="padding: 10px; background: #4CAF50; color: white; border-radius: 5px; text-align: center; flex: 1; margin: 0 5px;">{step} âœ…</div>'
+                html += f'<div style="padding: 10px; background: #4CAF50; color: white; border-radius: 5px; text-align: center; flex: 1; margin: 0 5px;">{step} OK</div>'
             elif i == current:
                 html += f'<div style="padding: 10px; background: #2196F3; color: white; border-radius: 5px; text-align: center; flex: 1; margin: 0 5px;">{step}</div>'
             else:

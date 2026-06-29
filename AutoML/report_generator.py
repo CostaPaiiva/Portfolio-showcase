@@ -2,11 +2,26 @@ from datetime import datetime
 import os
 
 import pandas as pd
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import inch
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    REPORTLAB_AVAILABLE = True
+except ModuleNotFoundError:
+    colors = None
+    A4 = None
+    ParagraphStyle = None
+    getSampleStyleSheet = None
+    inch = None
+    Paragraph = None
+    SimpleDocTemplate = None
+    Spacer = None
+    Table = None
+    TableStyle = None
+    REPORTLAB_AVAILABLE = False
 
 
 class PDFReportGenerator:
@@ -32,6 +47,9 @@ class PDFReportGenerator:
 
     @staticmethod
     def generate_report(results, trainer, problem_type, data_info=None):
+        if not REPORTLAB_AVAILABLE:
+            return PDFReportGenerator.generate_txt_report(results, trainer, problem_type, data_info)
+
         os.makedirs("reports", exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"reports/relatorio_automl_{timestamp}.pdf"
