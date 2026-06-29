@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 
 st.set_page_config(
     page_title="AutoML",
-    page_icon="🤖",
+    page_icon="A",
     layout="wide"
 )
 
@@ -83,10 +83,10 @@ class TargetDetector:
     @staticmethod
     def detect_target(data, user_hint=None):
         """
-        Detecta a coluna target automaticamente com inteligÃªncia
+        Detecta a coluna target automaticamente com inteligncia
         Retorna: (target_col, X, y, confidence_score, problem_type)
         """
-        # Se houver uma dica explícita, ela tem prioridade sobre a heurística.
+        # Se houver uma dica explcita, ela tem prioridade sobre a heurstica.
         if user_hint and user_hint in data.columns:
             X = data.drop(columns=[user_hint]).copy()
             y = data[user_hint].copy()
@@ -94,7 +94,7 @@ class TargetDetector:
             return user_hint, X, y, 1.0, problem_type
 
         # Sem dica, avalia todas as colunas e monta um ranking de probabilidade.
-        st.info("ðŸ” Analisando dataset para detectar target automaticamente...")
+        st.info(" Analisando dataset para detectar target automaticamente...")
 
         scores = {}
 
@@ -104,7 +104,7 @@ class TargetDetector:
 
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
-        st.write("ðŸ“Š **AnÃ¡lise automÃ¡tica:**")
+        st.write(" **Anlise automtica:**")
         analysis_df = pd.DataFrame(sorted_scores, columns=['Coluna', 'Score Target'])
 
         col1, col2 = st.columns(2)
@@ -115,28 +115,28 @@ class TargetDetector:
             if len(sorted_scores) > 0:
                 top_col = sorted_scores[0][0]
             try:
-                fig = px.histogram(data, x=top_col, title=f"DistribuiÃ§Ã£o: {top_col}")
+                fig = px.histogram(data, x=top_col, title=f"Distribuio: {top_col}")
                 st.plotly_chart(fig, use_container_width=True)
             except Exception:
-                st.write(f"*NÃ£o foi possÃ­vel criar grÃ¡fico para {top_col}*")
+                st.write(f"*No foi possvel criar grfico para {top_col}*")
 
         top_candidates = [col for col, score in sorted_scores[:3] if score > 0.3]
 
         if not top_candidates:
-            st.warning("âš ï¸ NÃ£o consegui detectar target automaticamente.")
+            st.warning(" No consegui detectar target automaticamente.")
             target_col = data.columns[-1]
             confidence = 0.1
         else:
-            # Mostra os candidatos mais fortes para confirmação manual.
-            st.write("ðŸŽ¯ **Candidatos a target (escolha ou confirme):**")
+            # Mostra os candidatos mais fortes para confirmao manual.
+            st.write(" **Candidatos a target (escolha ou confirme):**")
             target_col = st.selectbox(
             "Selecione a coluna target:",
-            options=top_candidates + ["âš ï¸ Nenhuma das acima"],                                         
+            options=top_candidates + [" Nenhuma das acima"],                                         
             index=0,                                       
             key="auto_target_select"                                        
             )
 
-            if target_col == "âš ï¸ Nenhuma das acima":
+            if target_col == " Nenhuma das acima":
                 target_col = st.selectbox(
                     "Selecione manualmente:",
                     options=data.columns.tolist(),                                               
@@ -152,9 +152,9 @@ class TargetDetector:
 
         problem_type = TargetDetector.detect_problem_type(y)
 
-        st.success(f"âœ… Target detectado: **{target_col}** (confianÃ§a: {confidence:.2f})")
-        st.success(f"ðŸ“Š Tipo de problema: **{problem_type.upper()}**")
-        st.write(f"ðŸ“ DimensÃµes: X={X.shape}, y={y.shape}")
+        st.success(f" Target detectado: **{target_col}** (confiana: {confidence:.2f})")
+        st.success(f" Tipo de problema: **{problem_type.upper()}**")
+        st.write(f" Dimenses: X={X.shape}, y={y.shape}")
 
         return target_col, X, y, confidence, problem_type
 
@@ -164,7 +164,7 @@ class TargetDetector:
         score = 0                                       
 
         try:
-            # Heurística simples: cardinalidade, nome, entropia, nulos e padrões de ID/data.
+            # Heurstica simples: cardinalidade, nome, entropia, nulos e padres de ID/data.
             n_unique = column.nunique()                                                  
             n_total = len(column)                                                 
             unique_ratio = n_unique / n_total if n_total > 0 else 0                                            
@@ -222,9 +222,9 @@ class TargetDetector:
 
     @staticmethod
     def detect_problem_type(y):
-        """Detecta se Ã© classificaÃ§Ã£o ou regressÃ£o de forma robusta"""
+        """Detecta se  classificao ou regresso de forma robusta"""
         try:
-            # Inferência conservadora para classificar problema em regressão ou classificação.
+            # Inferncia conservadora para classificar problema em regresso ou classificao.
             y_numeric = pd.to_numeric(y, errors='coerce')
             not_na = y_numeric.notna().sum()
 
@@ -279,7 +279,7 @@ class TargetDetector:
 
 class UltraRobustApp:
     def __init__(self):
-        # Estado global da sessão é inicializado apenas uma vez.
+        # Estado global da sesso  inicializado apenas uma vez.
         if 'app_initialized' not in st.session_state:
             st.session_state.app_initialized = True
             st.session_state.step = 1
@@ -295,7 +295,7 @@ class UltraRobustApp:
 
     def safe_rerun(self, delay=0.1):
         """Rerun seguro com delay"""
-        # Evita reruns muito próximos que podem causar comportamento instável.
+        # Evita reruns muito prximos que podem causar comportamento instvel.
         current_time = time.time()
         if current_time - st.session_state.last_rerun > 0.5:
             time.sleep(delay)
@@ -310,10 +310,10 @@ class UltraRobustApp:
 
 
     def run(self):
-        """Executa a aplicaÃ§Ã£o com tratamento de erros"""
+        """Executa a aplicao com tratamento de erros"""
         try:
             # Entrada principal do app.
-            st.title("🤖 AutoML")
+            st.title(" AutoML")
             st.markdown("""
             <div class='cv-badge'>OK - VALIDACAO CRUZADA ATIVADA</div>
             Sistema profissional com validacao cruzada e 30+ modelos!
@@ -333,14 +333,14 @@ class UltraRobustApp:
                     self.step_results()
             except Exception as e:
                 # Erro isolado da etapa atual.
-                st.error(f"âŒ Erro na etapa {st.session_state.step}: {str(e)}")
-                if st.button("ðŸ”„ Reiniciar AplicaÃ§Ã£o", key="restart_app_error"):
+                st.error(f" Erro na etapa {st.session_state.step}: {str(e)}")
+                if st.button(" Reiniciar Aplicao", key="restart_app_error"):
                     self.reset_app()
 
         except Exception as e:
             # Fallback final para falhas inesperadas fora do fluxo normal.
-            st.error(f"âŒ Erro crÃ­tico: {str(e)}")
-            st.info("Recarregue a pÃ¡gina para tentar novamente.")
+            st.error(f" Erro crtico: {str(e)}")
+            st.info("Recarregue a pgina para tentar novamente.")
 
     def show_progress(self):
         """Barra de progresso simples"""
@@ -385,18 +385,18 @@ class UltraRobustApp:
                 else:
                     data = pd.read_csv(uploaded_file)
 
-                st.success(f" Dataset carregado: {data.shape[0]} linhas Ã— {data.shape[1]} colunas")
+                st.success(f" Dataset carregado: {data.shape[0]} linhas  {data.shape[1]} colunas")
 
                 if st.checkbox(" Visualizar dados", key="show_preview_upload"):
                     st.dataframe(data.head(), use_container_width=True)
 
-                st.subheader(" SeleÃ§Ã£o do Target")
+                st.subheader(" Seleo do Target")
 
-                use_auto = st.checkbox(" Usar detecÃ§Ã£o automÃ¡tica", value=True, key="use_auto_detect")
+                use_auto = st.checkbox(" Usar deteco automtica", value=True, key="use_auto_detect")
 
                 if use_auto:
                     try:
-                        # Tenta uma definição automática do target.
+                        # Tenta uma definio automtica do target.
                         target_col, X, y, confidence, problem_type = TargetDetector.detect_target(data)
 
                         col1, col2 = st.columns(2)
@@ -412,15 +412,15 @@ class UltraRobustApp:
                         st.session_state.auto_detected = True
                         st.session_state.data = data
 
-                        st.success("âœ… Target detectado automaticamente!")
+                        st.success(" Target detectado automaticamente!")
 
                     except Exception as e:
-                        st.error(f"âŒ DetecÃ§Ã£o automÃ¡tica falhou: {str(e)}")
+                        st.error(f" Deteco automtica falhou: {str(e)}")
                         st.info("Por favor, selecione manualmente:")
                         use_auto = False
 
                 if not use_auto or not st.session_state.get('auto_detected', False):
-                    # Fallback manual caso a detecção automática não seja suficiente.
+                    # Fallback manual caso a deteco automtica no seja suficiente.
                     target_options = data.columns.tolist()
                     default_idx = len(target_options) - 1
 
@@ -455,14 +455,14 @@ class UltraRobustApp:
                     st.session_state.auto_detected = False
                     st.session_state.data = data
 
-                    st.success(f"âœ… Target selecionado: {target_col}")
+                    st.success(f" Target selecionado: {target_col}")
                     st.success(f" Tipo: {problem_type.upper()}")
 
                 st.markdown("---")
 
                 col1, col2 = st.columns(2)
                 with col1:
-                    if st.button("ðŸ”„ Novo Upload", type="secondary", key="new_upload_simple_btn"):
+                    if st.button(" Novo Upload", type="secondary", key="new_upload_simple_btn"):
                         keys_to_keep = ['app_initialized', 'last_rerun', 'n_folds', 'cv_strategy', 'random_state', 'parallel']
                         keys_to_remove = [k for k in st.session_state.keys() if k not in keys_to_keep]
                         for key in keys_to_remove:
@@ -471,29 +471,29 @@ class UltraRobustApp:
                         st.rerun()
 
                 with col2:
-                    if st.button("ðŸ”§ Continuar â†’", type="primary", key="continue_upload_btn"):
+                    if st.button(" Continuar ", type="primary", key="continue_upload_btn"):
                         if 'target_col' not in st.session_state:
-                            st.error("âŒ Selecione um target primeiro!")
+                            st.error(" Selecione um target primeiro!")
                         else:
                             if len(st.session_state.X) < 10:
-                                st.error("âŒ Muito poucas amostras (mÃ­nimo 10)")
+                                st.error(" Muito poucas amostras (mnimo 10)")
                             else:
                                 st.session_state.step = 2
                                 time.sleep(0.5)
                                 st.rerun()
 
             except Exception as e:
-                # Encaminha para leitura alternativa quando o parser padrão falhar.
-                st.error(f"âŒ Erro ao processar arquivo: {str(e)}")
+                # Encaminha para leitura alternativa quando o parser padro falhar.
+                st.error(f" Erro ao processar arquivo: {str(e)}")
 
                 try:
                     uploaded_file.seek(0)                                              
                     data = pd.read_csv(uploaded_file, encoding='latin-1')
-                    st.success("âœ… Carregado com encoding alternativo")
+                    st.success(" Carregado com encoding alternativo")
                     st.session_state.data = data
                     st.rerun()
                 except Exception:
-                    st.error("âŒ NÃ£o foi possÃ­vel ler o arquivo.")
+                    st.error(" No foi possvel ler o arquivo.")
 
                     X = data.drop(columns=[target_col]).copy()
                     y = data[target_col].copy()
@@ -513,14 +513,14 @@ class UltraRobustApp:
                     st.session_state.auto_detected = False
                     st.session_state.data = data
 
-                    st.success(f"âœ… Target selecionado: {target_col}")
+                    st.success(f" Target selecionado: {target_col}")
                     st.success(f" Tipo: {problem_type.upper()}")
 
                 st.markdown("---")
 
                 col1, col2 = st.columns(2)
                 with col1:
-                    if st.button("ðŸ”„ Novo Upload", type="secondary", key="new_upload_simple_btn"):
+                    if st.button(" Novo Upload", type="secondary", key="new_upload_simple_btn"):
                         keys_to_keep = ['app_initialized', 'last_rerun', 'n_folds', 'cv_strategy', 'random_state', 'parallel']
                         keys_to_remove = [k for k in st.session_state.keys() if k not in keys_to_keep]
                         for key in keys_to_remove:
@@ -529,37 +529,37 @@ class UltraRobustApp:
                         st.rerun()
 
                 with col2:
-                    if st.button("ðŸ”§ Continuar â†’", type="primary", key="continue_upload_btn"):
+                    if st.button(" Continuar ", type="primary", key="continue_upload_btn"):
                         if 'target_col' not in st.session_state:
-                            st.error("âŒ Selecione um target primeiro!")
+                            st.error(" Selecione um target primeiro!")
                         else:
                             if len(st.session_state.X) < 10:
-                                st.error("âŒ Muito poucas amostras (mÃ­nimo 10)")
+                                st.error(" Muito poucas amostras (mnimo 10)")
                             else:
                                 st.session_state.step = 2
                                 time.sleep(0.5)
                                 st.rerun()
 
             except Exception as e:
-                st.error(f"âŒ Erro ao processar arquivo: {str(e)}")
+                st.error(f" Erro ao processar arquivo: {str(e)}")
 
                 try:
                     uploaded_file.seek(0)
                     data = pd.read_csv(uploaded_file, encoding='latin-1')
-                    st.success("âœ… Carregado com encoding alternativo")
+                    st.success(" Carregado com encoding alternativo")
                     st.session_state.data = data
                     st.rerun()
                 except Exception:
-                    st.error("âŒ NÃ£o foi possÃ­vel ler o arquivo.")
+                    st.error(" No foi possvel ler o arquivo.")
 
     def step_process(self):
         """Processamento SIMPLIFICADO"""
-        # Etapa 2: preparação dos dados antes do treino.
-        st.header("ðŸ”§ Processamento de Dados")
+        # Etapa 2: preparao dos dados antes do treino.
+        st.header(" Processamento de Dados")
 
         if 'data' not in st.session_state or st.session_state.data is None:
-            st.warning("âš ï¸ Nenhum dataset carregado.")
-            if st.button("â¬…ï¸ Voltar para Upload", key="back_to_upload_process"):
+            st.warning(" Nenhum dataset carregado.")
+            if st.button(" Voltar para Upload", key="back_to_upload_process"):
                 st.session_state.step = 1
                 time.sleep(0.5)
                 st.rerun()
@@ -576,7 +576,7 @@ class UltraRobustApp:
         if st.button("Treinamento", type="primary", key="process_execute_btn"):
             with st.spinner("Processando dados..."):
                 try:
-                    # Usa o módulo centralizado de processamento.
+                    # Usa o mdulo centralizado de processamento.
                     processor = PowerfulDataProcessor()
 
                     X, y, problem_type = processor.process(
@@ -589,18 +589,18 @@ class UltraRobustApp:
                     st.session_state.problem_type = problem_type
                     st.session_state.processed = True
 
-                    # Mostra um resumo rápido do que foi produzido.
-                    st.success("âœ… Processamento concluÃ­do!")
+                    # Mostra um resumo rpido do que foi produzido.
+                    st.success(" Processamento concludo!")
 
-                    with st.expander("ðŸ“‹ Resultados do Processamento"):
+                    with st.expander(" Resultados do Processamento"):
                         col1, col2 = st.columns(2)
                         with col1:
                             st.write("**Features (X):**")
-                            st.write(f"- DimensÃµes: {X.shape}")
+                            st.write(f"- Dimenses: {X.shape}")
                             st.write(f"- Tipo: {type(X)}")
                         with col2:
                             st.write("**Target (y):**")
-                            st.write(f"- DimensÃµes: {y.shape}")
+                            st.write(f"- Dimenses: {y.shape}")
                             st.write(f"- Tipo: {problem_type.upper()}")
                             if problem_type == 'classification':
                                 st.write(f"- Classes: {len(np.unique(y))}")
@@ -608,8 +608,8 @@ class UltraRobustApp:
                     time.sleep(1)
 
                 except Exception as e:
-                    # Se o processamento avançado falhar, tenta um fallback mínimo.
-                    st.error(f"âŒ Erro no processamento: {str(e)}")
+                    # Se o processamento avanado falhar, tenta um fallback mnimo.
+                    st.error(f" Erro no processamento: {str(e)}")
                     try:
                         X = st.session_state.data.drop(columns=[st.session_state.target_col]).values
                         y = st.session_state.data[st.session_state.target_col].values
@@ -618,36 +618,36 @@ class UltraRobustApp:
                         st.session_state.y = y
                         st.session_state.processed = True
 
-                        st.success("âœ… Processamento simples realizado")
+                        st.success(" Processamento simples realizado")
                     except Exception:
-                        st.error("âŒ NÃ£o foi possÃ­vel processar os dados.")
+                        st.error(" No foi possvel processar os dados.")
 
         if st.session_state.get('processed', False):
             st.markdown("---")
-            if st.button(" Ir para Treinamento â†’", type="primary", key="go_to_train_btn"):
+            if st.button(" Ir para Treinamento ", type="primary", key="go_to_train_btn"):
                 st.session_state.step = 3
                 time.sleep(0.5)
                 st.rerun()
 
-        if st.button("â¬…ï¸ Voltar", key="back_from_process_btn"):
+        if st.button(" Voltar", key="back_from_process_btn"):
             st.session_state.step = 1
             time.sleep(0.5)
             st.rerun()
 
     def step_train(self):
         """Treinamento com fix"""
-        # Etapa 3: configurações e execução do treino.
-        st.header(" Treinamento com VALIDAÃ‡ÃƒO CRUZADA")
+        # Etapa 3: configuraes e execuo do treino.
+        st.header(" Treinamento com VALIDAO CRUZADA")
 
         if not st.session_state.get('processed', False):
-            st.warning("Dados nÃ£o processados.")
-            if st.button("â¬…ï¸ Voltar", key="back_to_process_train"):
+            st.warning("Dados no processados.")
+            if st.button(" Voltar", key="back_to_process_train"):
                 st.session_state.step = 2
                 time.sleep(0.1)
                 st.rerun()
             return
 
-        with st.expander(" EstatÃ­sticas do Dataset"):
+        with st.expander(" Estatsticas do Dataset"):
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Amostras", len(st.session_state.X))
@@ -658,23 +658,23 @@ class UltraRobustApp:
                     unique_classes = len(np.unique(st.session_state.y))
                     st.metric("Classes", unique_classes)
                 else:
-                    st.metric("Target MÃ©dia", f"{np.mean(st.session_state.y):.2f}")
+                    st.metric("Target Mdia", f"{np.mean(st.session_state.y):.2f}")
             with col4:
                 if st.session_state.problem_type == 'regression':
                     st.metric("Target Std", f"{np.std(st.session_state.y):.2f}")
                 else:
                     class_dist = pd.Series(st.session_state.y).value_counts().iloc[0] / len(st.session_state.y) * 100
-                    st.metric("Classe MajoritÃ¡ria", f"{class_dist:.1f}%")
+                    st.metric("Classe Majoritria", f"{class_dist:.1f}%")
 
         with st.container():
-            st.info(" **VALIDAÃ‡ÃƒO CRUZADA ATIVADA**")
+            st.info(" **VALIDAO CRUZADA ATIVADA**")
 
-            with st.expander("âš™ï¸ ConfiguraÃ§Ãµes da ValidaÃ§Ã£o Cruzada"):
+            with st.expander(" Configuraes da Validao Cruzada"):
                 # Ajustes do treino sem sair da interface.
                 col1, col2 = st.columns(2)
                 with col1:
                     n_folds = st.slider(
-                        "NÃºmero de folds",
+                        "Nmero de folds",
                         3,
                         10,
                         st.session_state.get('n_folds', 5),
@@ -682,7 +682,7 @@ class UltraRobustApp:
                         key="n_folds_slider_train"
                     )
                     cv_strategy = st.selectbox(
-                        "EstratÃ©gia CV",
+                        "Estratgia CV",
                         ["Auto (Recomendado)", "Stratified K-Fold", "K-Fold"],
                         index=["Auto (Recomendado)", "Stratified K-Fold", "K-Fold"].index(st.session_state.get('cv_strategy', "Auto (Recomendado)")),
                         help="Auto escolhe a melhor baseado nos dados",
@@ -699,7 +699,7 @@ class UltraRobustApp:
                     parallel = st.checkbox(
                         "Treinamento Paralelo",
                         value=st.session_state.get('parallel', True),
-                        help="Usa todos os cores da CPU (mais rÃ¡pido)",
+                        help="Usa todos os cores da CPU (mais rpido)",
                         key="parallel_checkbox_train"
                     )
 
@@ -708,13 +708,13 @@ class UltraRobustApp:
                 st.session_state.random_state = random_state
                 st.session_state.parallel = parallel
 
-            st.warning("âš ï¸ O treinamento testarÃ¡ **15+ modelos** e pode levar alguns minutos.")
+            st.warning(" O treinamento testar **15+ modelos** e pode levar alguns minutos.")
 
             if st.button(" INICIAR TREINAMENTO COMPLETO", type="primary", key="start_training_main_btn"):
-                # Dispara o treino com os parâmetros da sessão.
+                # Dispara o treino com os parmetros da sesso.
                 self._execute_training()
 
-        if st.button("â¬…ï¸ Voltar para Processamento", key="back_to_process_train_2"):
+        if st.button(" Voltar para Processamento", key="back_to_process_train_2"):
             st.session_state.step = 2
             time.sleep(0.1)
             st.rerun()
@@ -723,7 +723,7 @@ class UltraRobustApp:
         """Executa treinamento em container separado"""
         with st.spinner("Treinando 15+ modelos..."):
             try:
-                # Recupera o conjunto já processado da sessão.
+                # Recupera o conjunto j processado da sesso.
                 X = st.session_state.X
                 y = st.session_state.y
                 problem_type = st.session_state.problem_type
@@ -739,24 +739,24 @@ class UltraRobustApp:
                 st.session_state.best_model_name = best_model_name
                 st.session_state.best_model = trainer.best_model
 
-                # Avança para a tela final após o treino concluir.
-                st.success("âœ… Treinamento concluÃ­do!")
+                # Avana para a tela final aps o treino concluir.
+                st.success(" Treinamento concludo!")
 
                 time.sleep(1)
                 st.session_state.step = 4
                 st.rerun()
 
             except Exception as e:
-                st.error(f"âŒ Erro no treinamento: {str(e)}")
+                st.error(f" Erro no treinamento: {str(e)}")
 
     def step_results(self):
         """Resultados"""
-        # Etapa 4: resumo, ranking e exportações.
+        # Etapa 4: resumo, ranking e exportaes.
         st.header(" Resultados")
 
         if 'results' not in st.session_state:
-            st.warning("Nenhum resultado disponÃ­vel.")
-            if st.button("â¬…ï¸ Voltar", key="back_to_train_results"):
+            st.warning("Nenhum resultado disponvel.")
+            if st.button(" Voltar", key="back_to_train_results"):
                 st.session_state.step = 3
                 time.sleep(0.1)
                 st.rerun()
@@ -785,7 +785,7 @@ class UltraRobustApp:
                     st.metric(" Modelos Treinados", len(results))
 
             with st.expander(" Ranking Completo"):
-                # Tabela consolidada e gráfico dos melhores modelos.
+                # Tabela consolidada e grfico dos melhores modelos.
                 ranking_df = trainer.get_ranking()
                 ranking_display = ranking_df.copy()
                 if 'Score' in ranking_display.columns:
@@ -804,11 +804,11 @@ class UltraRobustApp:
                     st.plotly_chart(fig, use_container_width=True)
 
             if 'best_model' in st.session_state and st.session_state.best_model is not None:
-                with st.expander(" MÃ©tricas Detalhadas"):
+                with st.expander(" Mtricas Detalhadas"):
                     # Permite inspecionar qualquer modelo sem poluir a tela principal.
                     model_options = list(results.keys())
                     selected_model = st.selectbox(
-                        "Selecione um modelo para ver mÃ©tricas detalhadas:",
+                        "Selecione um modelo para ver mtricas detalhadas:",
                         model_options,
                         key="model_select_detailed_results"
                     )
@@ -825,16 +825,16 @@ class UltraRobustApp:
                                     st.metric(
                                         label=metric_name.upper(),
                                         value=f"{float(value):.4f}",
-                                        delta=f"Â± {float(metrics.get(f'{metric_name}_std', 0)):.4f}" if f'{metric_name}_std' in metrics else None
+                                        delta=f" {float(metrics.get(f'{metric_name}_std', 0)):.4f}" if f'{metric_name}_std' in metrics else None
                                     )
                                 metric_count += 1
 
                         if 'cv_type' in metrics:
                             st.write("---")
-                            st.write(f"**EstratÃ©gia CV:** {metrics['cv_type']}")
-                            st.write(f"**NÃºmero de folds:** {metrics.get('n_folds', 5)}")
-                            st.write(f"**Tempo mÃ©dio de treino:** {float(metrics.get('fit_time', 0)):.2f}s")
-                            st.write(f"**Tempo mÃ©dio de score:** {float(metrics.get('score_time', 0)):.2f}s")
+                            st.write(f"**Estratgia CV:** {metrics['cv_type']}")
+                            st.write(f"**Nmero de folds:** {metrics.get('n_folds', 5)}")
+                            st.write(f"**Tempo mdio de treino:** {float(metrics.get('fit_time', 0)):.2f}s")
+                            st.write(f"**Tempo mdio de score:** {float(metrics.get('score_time', 0)):.2f}s")
 
             st.subheader(" Exportar Resultados")
 
@@ -848,7 +848,7 @@ class UltraRobustApp:
                         csv_data = ranking_df.to_csv(index=False).encode('utf-8')
 
                         st.download_button(
-                            "â¬‡ï¸ Baixar CSV",                           
+                            " Baixar CSV",                           
                             csv_data,                          
                             f"ranking_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",                   
                             "text/csv",                        
@@ -858,7 +858,7 @@ class UltraRobustApp:
                         st.error(f"Erro CSV: {e}")
 
             with col2:
-                # Salva o melhor modelo em disco e expõe download.
+                # Salva o melhor modelo em disco e expe download.
                 if st.button(" Salvar Modelo", key="save_model_results_btn"):
                     if trainer.best_model is not None:
                         try:
@@ -874,20 +874,20 @@ class UltraRobustApp:
                                     model_bytes = f.read()
 
                                 st.download_button(
-                                    "â¬‡ï¸ Baixar Modelo",                           
+                                    " Baixar Modelo",                           
                                     model_bytes,                          
                                     model_filename,                   
                                     "application/octet-stream",                                               
                                     key=f"download_model_{timestamp}"                
                                 )
-                                st.success(f"âœ… Modelo salvo: {model_filename}")
+                                st.success(f" Modelo salvo: {model_filename}")
                         except Exception as e:
-                            st.error(f"âŒ Erro ao salvar: {str(e)}")
+                            st.error(f" Erro ao salvar: {str(e)}")
 
             with col3:
-                # Gera o relatório consolidado no módulo centralizado.
-                if st.button(" Gerar RelatÃ³rio", key="generate_report_btn"):
-                    with st.spinner("Gerando relatÃ³rio..."):
+                # Gera o relatrio consolidado no mdulo centralizado.
+                if st.button(" Gerar Relatrio", key="generate_report_btn"):
+                    with st.spinner("Gerando relatrio..."):
                         try:
                             data_info = {
                                 'dataset_name': 'Dataset Processado',
@@ -910,22 +910,22 @@ class UltraRobustApp:
                                 mime_type = "application/pdf" if ext == ".pdf" else "text/plain"
 
                                 st.download_button(
-                                    "â¬‡ï¸ Baixar RelatÃ³rio",                           
+                                    " Baixar Relatrio",                           
                                     file_bytes,                          
                                     os.path.basename(report_path),                        
                                     mime_type,                        
                                     key="download_report_btn"                
                                 )
                             else:
-                                st.warning("NÃ£o foi possÃ­vel gerar o relatÃ³rio.")
+                                st.warning("No foi possvel gerar o relatrio.")
                         except Exception as e:
-                            st.error(f"âŒ Erro no relatÃ³rio: {str(e)}")
+                            st.error(f" Erro no relatrio: {str(e)}")
 
             st.markdown("---")
             col1, col2 = st.columns([1, 3])
 
             with col1:
-                if st.button("â¬…ï¸ Voltar", key="back_to_train_final"):
+                if st.button(" Voltar", key="back_to_train_final"):
                     st.session_state.step = 3
                     time.sleep(0.1)
                     st.rerun()
@@ -943,8 +943,8 @@ class UltraRobustApp:
                     st.rerun()
 
         except Exception as e:
-            st.error(f"âŒ Erro nos resultados: {str(e)}")
-            if st.button(" Reiniciar AplicaÃ§Ã£o", key="restart_app_results"):
+            st.error(f" Erro nos resultados: {str(e)}")
+            if st.button(" Reiniciar Aplicao", key="restart_app_results"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 st.rerun()
@@ -967,7 +967,7 @@ class UltraRobustApp:
                 del st.session_state[key]
 
     def reset_app(self):
-        """Reinicia aplicaÃ§Ã£o completamente"""
+        """Reinicia aplicao completamente"""
         # Limpeza total para reiniciar o fluxo do zero.
         for key in list(st.session_state.keys()):
             del st.session_state[key]
@@ -979,5 +979,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
