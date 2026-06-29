@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pandas as pd
-from sklearn.datasets import make_classification
+from sklearn.datasets import make_classification, make_regression
 
 
 class AutoMLTestSupport:
@@ -30,9 +30,28 @@ class AutoMLTestSupport:
         df["target"] = pd.Series(y).map({0: "negativo", 1: "positivo"})
         return df
 
+    def build_regression_dataset(self):
+        X, y = make_regression(
+            n_samples=80,
+            n_features=6,
+            n_informative=4,
+            noise=0.2,
+            random_state=42,
+        )
+        df = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
+        df["target"] = pd.Series(y)
+        return df
+
     def prepare_csv(self):
         tmpdir = tempfile.TemporaryDirectory()
         df = self.build_dataset()
         csv_path = Path(tmpdir.name) / "dataset.csv"
+        df.to_csv(csv_path, index=False)
+        return tmpdir, df, csv_path
+
+    def prepare_regression_csv(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        df = self.build_regression_dataset()
+        csv_path = Path(tmpdir.name) / "regression_dataset.csv"
         df.to_csv(csv_path, index=False)
         return tmpdir, df, csv_path
