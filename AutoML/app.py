@@ -345,7 +345,7 @@ class TargetDetector:
             except Exception:
                 return 'regression' # Como fallback final, retorna regressão se tudo falhar.
 
-# ========== APLICAÇÃO PRINCIPAL COM FIXES ==========
+# ========== APLICAÇÃO PRINCIPAL ==========
 class UltraRobustApp:
     # Construtor da classe UltraRobustApp.
     def __init__(self):
@@ -1066,9 +1066,9 @@ class UltraRobustApp:
                 # Armazena o objeto do treinador (com o melhor modelo e ranking) na sessão do Streamlit.
                 st.session_state.trainer = trainer
                 # Armazena o nome do melhor modelo na sessão do Streamlit.
-                st.session_state.best_model_name = best_model_name # Correção: armazenar o nome, não o objeto do modelo aqui
-                # Armazena o objeto do melhor modelo treinado (se houver) na sessão do Streamlit.
-                st.session_state.best_model = trainer.best_model # Armazenar o objeto do modelo treinado
+                st.session_state.best_model_name = best_model_name
+                # Armazena o objeto do melhor modelo treinado, se houver.
+                st.session_state.best_model = trainer.best_model
 
                 # Exibe uma mensagem de sucesso no Streamlit indicando que o treinamento foi concluído.
                 st.success("✅ Treinamento concluído!")
