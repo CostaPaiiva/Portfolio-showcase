@@ -31,6 +31,7 @@ import os
 # Importa implementacoes centralizadas para reduzir duplicacao entre arquivos
 from data_processing import PowerfulDataProcessor
 from model_training import UltraCompleteTrainer
+from report_generator import PDFReportGenerator as ModularPDFReportGenerator
 # Importa a biblioteca warnings para controlar avisos de depreciação ou outros
 import warnings
 # Ignora todos os avisos para manter a saída limpa
@@ -2805,7 +2806,7 @@ class UltraRobustApp:
                             }
 
                             # Chama o gerador de relatório para criar o arquivo.
-                            report_path = PDFReportGenerator.generate_report(
+                            report_path = ModularPDFReportGenerator.generate_report(
                                 results, # Resultados dos modelos.
                                 trainer, # Objeto do treinador.
                                 problem_type, # Tipo de problema.
