@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 
 from data_processing import PowerfulDataProcessor
 from model_training import UltraCompleteTrainer
@@ -42,6 +42,42 @@ class TestReport(unittest.TestCase, AutoMLTestSupport):
 
         self.assertTrue(report_path.exists())
         self.assertTrue(report_path.suffix in {".pdf", ".txt"})
+
+    def test_regression_report_generation(self):
+        tmpdir, dataframe, csv_path = self.prepare_regression_csv()
+        self.addCleanup(tmpdir.cleanup)
+
+        processor = PowerfulDataProcessor(target_column="target", problem_type="auto")
+        X_processed, y_processed, problem_type = processor.process(data=pd.read_csv(csv_path))
+
+        trainer = UltraCompleteTrainer(problem_type)
+        trainer.n_folds = 3
+        trainer.get_all_models = lambda: {
+            "LinearRegression": LinearRegression()
+        }
+        results, _ = trainer.train_models(X_processed, y_processed, optimize_top_n=0)
+
+        with self.temporary_cwd(tmpdir.name):
+            report_path = Path(
+                PDFReportGenerator.generate_txt_report(
+                    results,
+                    trainer,
+                    problem_type,
+                    {
+                        "dataset_name": "regression_dataset.csv",
+                        "n_samples": len(dataframe),
+                        "n_features": dataframe.shape[1] - 1,
+                    },
+                )
+            ).resolve()
+
+            content = report_path.read_text(encoding="utf-8").lower()
+
+        self.assertTrue(report_path.exists())
+        self.assertIn("r2", content)
+        self.assertIn("rmse", content)
+        self.assertIn("mae", content)
+        self.assertIn("linearregression", content)
 
 
 if __name__ == "__main__":
