@@ -563,3 +563,52 @@ class AdvancedDataProcessor:  # Define uma classe chamada AdvancedDataProcessor 
             print(f"❌ Erro no processamento simples: {str(e)}")
             # Relança a exceção para que o chamador possa lidar com ela
             raise
+
+
+class PowerfulDataProcessor(AdvancedDataProcessor):
+    """Compatibilidade com a interface usada em app.py."""
+
+    def process(self, data=None, target_col=None, X=None, y=None, problem_type=None, auto_detect=True):
+        if data is None and X is None:
+            raise ValueError("Forneca `data` ou `X` para processamento.")
+
+        if data is not None:
+            if target_col is None and auto_detect:
+                target_col = data.columns[-1]
+            if target_col is None or target_col not in data.columns:
+                raise ValueError("Coluna target invalida ou nao encontrada.")
+            X = data.drop(columns=[target_col]).copy()
+            y = data[target_col].copy()
+
+        self.target_column = target_col or self.target_column
+
+        if problem_type and problem_type != "auto":
+            self.problem_type = problem_type
+        elif data is not None and auto_detect:
+            self.problem_type = self.detect_problem_type(data)
+
+        if X is None or y is None:
+            raise ValueError("Nao foi possivel separar X e y.")
+
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X)
+
+        y_series = pd.Series(y).copy()
+
+        if self.problem_type == "classification":
+            if y_series.dtype == "object" or str(y_series.dtype) == "category":
+                y_series = pd.Series(pd.factorize(y_series.fillna("missing"))[0], index=y_series.index)
+        else:
+            y_series = pd.to_numeric(y_series, errors="coerce")
+            y_series = y_series.fillna(y_series.median() if not y_series.dropna().empty else 0)
+
+        X_processed = self.advanced_cleaning(X)
+        X_processed = self.handle_missing_values(X_processed, strategy="simple")
+        X_processed = self.encode_categorical(X_processed)
+        y_series = y_series.loc[X_processed.index]
+
+        if X_processed.shape[1] > 10:
+            X_processed = self.feature_selection(X_processed, y_series)
+
+        X_processed = self.scale_features(X_processed)
+        return X_processed, y_series, self.problem_type

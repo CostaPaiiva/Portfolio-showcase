@@ -28,6 +28,9 @@ import joblib
 from datetime import datetime
 # Importa o módulo OS para interagir com o sistema operacional, como criar diretórios
 import os
+# Importa implementacoes centralizadas para reduzir duplicacao entre arquivos
+from data_processing import PowerfulDataProcessor
+from model_training import UltraCompleteTrainer
 # Importa a biblioteca warnings para controlar avisos de depreciação ou outros
 import warnings
 # Ignora todos os avisos para manter a saída limpa
@@ -388,7 +391,7 @@ class PDFReportGenerator:
             return None  # Retorna None indicando que o relatório TXT não pôde ser gerado.
 
 # ========== PROCESSAMENTO DE DADOS ==========
-class PowerfulDataProcessor:
+class LegacyPowerfulDataProcessor:
     """Processador de dados avançado com feature engineering e detecção automática"""
 
     def __init__(self):
@@ -873,7 +876,7 @@ class PowerfulDataProcessor:
             return X, y, 'classification'
 
 # ========== TREINAMENTO COM VALIDAÇÃO CRUZADA ==========
-class UltraCompleteTrainer:
+class LegacyUltraCompleteTrainer:
     # Inicializa a classe UltraCompleteTrainer.
     def __init__(self, problem_type):
         # Armazena o tipo de problema (classificação ou regressão).

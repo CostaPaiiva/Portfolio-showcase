@@ -59,6 +59,7 @@ class AdvancedModelTrainer:
         self.best_model_name = ""
         # Dicionário para armazenar a importância das features de cada modelo
         self.feature_importance = {}
+        self.n_folds = 5
 
     # Método para obter todos os modelos disponíveis
     def get_all_models(self):
@@ -339,9 +340,9 @@ class AdvancedModelTrainer:
 
                     # Define a estratégia de validação cruzada
                     if self.problem_type == 'classification':
-                        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+                        cv = StratifiedKFold(n_splits=getattr(self, "n_folds", 5), shuffle=True, random_state=42)
                     else:
-                        cv = KFold(n_splits=5, shuffle=True, random_state=42)
+                        cv = KFold(n_splits=getattr(self, "n_folds", 5), shuffle=True, random_state=42)
 
                     # Calcula as pontuações da validação cruzada
                     cv_scores = cross_val_score(
@@ -609,10 +610,10 @@ class AdvancedModelTrainer:
                 # Calcula pontuações de validação cruzada para o ensemble
                 # Define a estratégia de validação cruzada estratificada para classificação, com 5 folds, embaralhamento e semente aleatória fixa.
                 if self.problem_type == 'classification':
-                    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+                    cv = StratifiedKFold(n_splits=getattr(self, "n_folds", 5), shuffle=True, random_state=42)
                 # Define a estratégia de validação cruzada K-Fold para regressão, com 5 folds, embaralhamento e semente aleatória fixa.
                 else:
-                    cv = KFold(n_splits=5, shuffle=True, random_state=42)
+                    cv = KFold(n_splits=getattr(self, "n_folds", 5), shuffle=True, random_state=42)
 
                 # Calcula as pontuações da validação cruzada para o modelo de ensemble.
                 cv_scores = cross_val_score(
@@ -700,10 +701,10 @@ class AdvancedModelTrainer:
 
                     # Define a estratégia de validação cruzada estratificada para classificação, com 5 folds, embaralhamento e semente aleatória fixa.
                     if self.problem_type == 'classification':
-                        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+                        cv = StratifiedKFold(n_splits=getattr(self, "n_folds", 5), shuffle=True, random_state=42)
                     # Define a estratégia de validação cruzada K-Fold para regressão, com 5 folds, embaralhamento e semente aleatória fixa.
                     else:
-                        cv = KFold(n_splits=5, shuffle=True, random_state=42)
+                        cv = KFold(n_splits=getattr(self, "n_folds", 5), shuffle=True, random_state=42)
 
                     # Calcula as pontuações da validação cruzada para o modelo otimizado.
                     cv_scores = cross_val_score(
@@ -803,3 +804,13 @@ class AdvancedModelTrainer:
 
         # Imprime uma mensagem confirmando que os resultados foram salvos
         print(f"Resultados salvos em {path}/model_results.csv")
+
+
+class UltraCompleteTrainer(AdvancedModelTrainer):
+    """Compatibilidade com a interface usada em app.py."""
+
+    def train_safe(self, X, y):
+        return self.train_models(X, y, optimize_top_n=5)
+
+    def get_ranking(self):
+        return self.get_ranked_models()
