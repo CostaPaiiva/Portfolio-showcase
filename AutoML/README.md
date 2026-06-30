@@ -1,199 +1,193 @@
 # AutoML
 
-AutoML platform with a Streamlit web interface for tabular dataset ingestion, intelligent data preparation, automated model training, performance comparison, and report generation.
+AutoML is a Streamlit-based machine learning application for tabular datasets. It covers the full workflow from dataset upload and target selection to preprocessing, cross-validated model training, ranking, artifact export, and report generation.
 
-The project is structured to demonstrate a complete applied machine learning workflow with a strong focus on usability, automation, and professional presentation.
+This project was built as a portfolio piece with product focus, not just model training. The goal is to show a usable ML interface, modular backend organization, and an end-to-end applied workflow for classification and regression problems.
 
 <p>
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-blue">
-  <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-UI-red">
-  <img alt="Scikit-learn" src="https://img.shields.io/badge/Scikit--learn-ML-orange">
-  <img alt="Plotly" src="https://img.shields.io/badge/Plotly-Visualizations-6f42c1">
-  <img alt="Automation" src="https://img.shields.io/badge/Automation-AutoML-success">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-1f4b99">
+  <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-Interface-e74c3c">
+  <img alt="Scikit-learn" src="https://img.shields.io/badge/Scikit--learn-Modeling-f39c12">
+  <img alt="Plotly" src="https://img.shields.io/badge/Plotly-Visualization-2c3e50">
+  <img alt="AutoML" src="https://img.shields.io/badge/Workflow-End--to--End-27ae60">
 </p>
 
-## Overview
+## Executive Summary
 
-| Item | Description |
+AutoML provides a guided interface for:
+
+- loading CSV, TXT, and Excel datasets
+- suggesting or confirming the target column
+- preprocessing tabular data for ML training
+- running cross-validated experiments across multiple models
+- ranking model performance and surfacing the best candidate
+- exporting model artifacts, rankings, and PDF/TXT reports
+
+## Portfolio Highlights
+
+| Area | What this project demonstrates |
 |---|---|
-| Area | Machine Learning and Automation |
-| Interface | Streamlit |
-| Visualization | Plotly |
-| Training stack | Scikit-learn, XGBoost, LightGBM, CatBoost |
-| Purpose | AutoML pipeline for classification and regression |
+| Product thinking | Full user flow with clear steps and output artifacts |
+| Applied ML | Classification and regression in one interface |
+| Engineering | Modular separation between app, processing, training, and reporting |
+| Evaluation | Cross-validation, ranking, and model comparison |
+| Delivery | Ready-to-show UI with screenshots and exportable outputs |
 
-## At a glance
+## Core Capabilities
 
-| Signal | Value |
+| Module | Responsibilities |
 |---|---|
-| Problem types | Classification and regression |
-| Workflow | Upload -> process -> train -> rank -> export |
-| Output | Best model, ranking, and report artifacts |
-| Strength | One interface for multiple ML steps |
+| `app.py` | Streamlit UI, workflow state, result presentation |
+| `data_processing.py` | Cleaning, transformation, encoding, scaling, preparation |
+| `model_training.py` | Model training, validation, ranking, ensemble selection |
+| `report_generator.py` | Report generation with PDF/TXT fallback |
+| `tests/` | Processing, training, and report flow coverage |
 
-## What the platform does
+## End-to-End Workflow
 
-- accepts tabular datasets
-- automatically detects the problem type
-- processes data with cleaning, imputation, encoding, and scaling
-- trains multiple models in parallel
-- compares metrics with cross-validation
-- selects and saves the best model
-- exports rankings, artifacts, and reports
+### 1. Landing and dataset upload
 
-## Project structure
+The user starts in a guided Streamlit interface with an explicit step-based workflow and validation-crossed training enabled by default.
 
-```text
-AutoML/
-├── app.py
-├── dashboard.py
-├── data_processing.py
-├── model_training.py
-├── report_generator.py
-├── requirements.txt
-├── LICENSE
-├── .gitignore
-└── modelo.pkl
-```
+![Upload home](assets/screenshots/01-upload-home.png)
 
-## Application flow
+### 2. Dataset ingestion and preview
 
-1. Upload the dataset
-2. Select or detect the `target`
-3. Process the data
-4. Train with cross-validation
-5. Evaluate, rank, and export results
+After upload, the application confirms dataset dimensions and allows immediate preview of the raw tabular input.
 
-## Main features
+![Dataset preview](assets/screenshots/02-dataset-preview.png)
 
-| Block | Features |
-|---|---|
-| Upload | CSV, TXT, and Excel support |
-| Preparation | Cleaning, imputation, encoding, scaling, feature selection |
-| Training | Classification, regression, ensembles, and tuning |
-| Results | Ranking, metrics, charts, and best model selection |
-| Export | CSV, `.pkl`, and PDF/TXT report output |
+### 3. Automatic target analysis
 
-## Supported models
+The system inspects candidate columns, generates a ranking for likely targets, and visualizes the leading candidate distribution.
+
+![Target detection](assets/screenshots/03-target-detection.png)
+
+### 4. Target confirmation and problem inference
+
+The user can confirm a suggested target or override it manually. The app then infers whether the problem is classification or regression.
+
+![Target confirmation](assets/screenshots/04-target-confirmation.png)
+
+### 5. Data processing stage
+
+The processing step summarizes sample size, feature count, selected target, and processed output shapes before training.
+
+![Processing](assets/screenshots/05-processing.png)
+
+### 6. Cross-validation training configuration
+
+The training step exposes folds, CV strategy, random seed, and parallelism controls while keeping the workflow accessible from a single screen.
+
+![Training configuration](assets/screenshots/06-training.png)
+
+### 7. Best model summary
+
+Once training finishes, the interface highlights the best model, top score, total models trained, and detailed metric breakdown for any selected model.
+
+![Results summary](assets/screenshots/07-results-summary.png)
+
+### 8. Complete ranking view
+
+The ranking view presents the ordered leaderboard with primary metric and full model details, making comparison and portfolio storytelling straightforward.
+
+![Ranking](assets/screenshots/08-ranking.png)
+
+## Modeling Scope
 
 ### Classification
 
 - Logistic Regression
 - Ridge Classifier
 - SGD Classifier
-- SVC, NuSVC, and LinearSVC
-- KNN and Radius Neighbors
-- Decision Tree, Extra Tree, and Random Forest
-- Gradient Boosting, AdaBoost, Bagging, and Extra Trees
-- HistGradientBoosting
-- GaussianNB, BernoulliNB, and MultinomialNB
-- Linear Discriminant Analysis
-- Quadratic Discriminant Analysis
-- MLP Classifier
-- XGBoost, LightGBM, and CatBoost
-- Voting Classifier
+- SVC, NuSVC, LinearSVC
+- KNeighborsClassifier, RadiusNeighborsClassifier
+- DecisionTreeClassifier, ExtraTreeClassifier
+- RandomForestClassifier
+- GradientBoostingClassifier
+- AdaBoostClassifier
+- BaggingClassifier
+- ExtraTreesClassifier
+- HistGradientBoostingClassifier
+- GaussianNB, BernoulliNB, MultinomialNB
+- LinearDiscriminantAnalysis
+- QuadraticDiscriminantAnalysis
+- MLPClassifier
+- XGBoost, LightGBM, CatBoost when available
+- VotingClassifier
 
 ### Regression
 
-- Linear Regression
-- Ridge, Lasso, and ElasticNet
-- SGD Regressor
-- SVR, NuSVR, and LinearSVR
-- KNN and Radius Neighbors Regressor
-- Decision Tree, Extra Tree, and Random Forest Regressor
-- Gradient Boosting, AdaBoost, Bagging, and Extra Trees Regressor
-- HistGradientBoosting Regressor
-- Kernel Ridge
-- MLP Regressor
-- XGBoost, LightGBM, and CatBoost Regressor
-- Voting Regressor
+- LinearRegression
+- Ridge, Lasso, ElasticNet
+- SGDRegressor
+- SVR, NuSVR, LinearSVR
+- KNeighborsRegressor, RadiusNeighborsRegressor
+- DecisionTreeRegressor, ExtraTreeRegressor
+- RandomForestRegressor
+- GradientBoostingRegressor
+- AdaBoostRegressor
+- BaggingRegressor
+- ExtraTreesRegressor
+- HistGradientBoostingRegressor
+- KernelRidge
+- MLPRegressor
+- XGBoost, LightGBM, CatBoost when available
+- VotingRegressor
 
-## Metrics evaluated
+## Evaluation and Outputs
 
-| Type | Metrics |
+| Category | Outputs |
 |---|---|
-| Classification | Accuracy, F1, Precision, Recall, ROC AUC |
-| Regression | R2, RMSE, MAE, Explained Variance |
-| General | Average time, fold standard deviation, and ranking |
+| Metrics | Accuracy, F1, Precision, Recall, ROC AUC, R2, RMSE, MAE, Explained Variance |
+| Validation | Cross-validation summary and ranking |
+| Artifacts | Best model export in `.pkl` |
+| Reports | Ranking export in CSV and PDF/TXT report generation |
+| Presentation | Visual ranking, summary cards, and detailed metrics |
 
-## Internal organization
+## Tech Stack
 
-| File | Responsibility |
-|---|---|
-| `app.py` | Main application interface and flow |
-| `data_processing.py` | Data cleaning, transformation, and preparation |
-| `model_training.py` | Training, evaluation, ranking, and tuning |
-| `dashboard.py` | Supporting visual dashboard |
-| `report_generator.py` | Report generation |
-
-## Technologies used
-
-| Category | Tools |
+| Layer | Tools |
 |---|---|
 | Language | Python |
-| Interface | Streamlit |
+| UI | Streamlit |
 | Data | Pandas, NumPy |
 | ML | Scikit-learn, XGBoost, LightGBM, CatBoost |
+| Optimization | Optuna |
 | Visualization | Plotly |
 | Serialization | Joblib |
-| Optimization | Optuna |
-| Reports | FPDF, ReportLab, Matplotlib |
-| Additional dashboard | Dash, Bootstrap Components |
+| Reports | ReportLab with TXT fallback |
 
-## How to run
+## Project Structure
 
-### 1. Clone the repository
+```text
+AutoML/
+|-- app.py
+|-- dashboard.py
+|-- data_processing.py
+|-- model_training.py
+|-- report_generator.py
+|-- tests/
+|-- assets/
+|   `-- screenshots/
+|-- requirements.txt
+`-- README.md
+```
+
+## Running Locally
 
 ```bash
 git clone https://github.com/CostaPaiiva/AutoML.git
 cd AutoML
-```
-
-### 2. Create and activate a virtual environment
-
-**Windows**
-
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-**Linux / macOS**
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-### 4. Run the application
-
-```bash
 streamlit run app.py
 ```
 
-## Project strengths
+## Why This Project Works For A Portfolio
 
-- complete AutoML workflow
-- clear separation between preparation, training, and reporting
-- strong focus on visual experience
-- applicable to both classification and regression
-- useful artifacts for technical presentation
-
-## Notes
-
-- The project shows end-to-end product thinking, not only model training.
-- The interface makes the workflow easy to understand without reading code first.
-- The structure separates responsibilities clearly across modules.
-
-## Next steps
-
-- improve automatic feature selection
-- expand ensemble strategy support
-- standardize report outputs
-- add dataset examples and UI screenshots
+- It shows a complete ML product flow rather than isolated notebooks.
+- It demonstrates practical model comparison and exportable outputs.
+- It combines UI, data engineering, model training, and reporting in one deliverable.
+- It is easy for a recruiter or client to understand from screenshots alone.
