@@ -185,8 +185,6 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Why This Project Works For A Portfolio
-
 - It shows a complete ML product flow rather than isolated notebooks.
 - It demonstrates practical model comparison and exportable outputs.
 - It combines UI, data engineering, model training, and reporting in one deliverable.
