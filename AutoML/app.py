@@ -788,18 +788,27 @@ class UltraRobustApp:
                 # Tabela consolidada e grfico dos melhores modelos.
                 ranking_df = trainer.get_ranking()
                 ranking_display = ranking_df.copy()
-                if 'Score' in ranking_display.columns:
-                    ranking_display['Score'] = ranking_display['Score'].map(lambda x: f"{float(x):.4f}")
+                metric_candidates = [c for c in ranking_display.columns if c != 'Modelo']
+                metric_col = next(
+                    (
+                        c for c in metric_candidates
+                        if any(token in c.lower() for token in ('metric', 'score', 'principal'))
+                    ),
+                    metric_candidates[0] if metric_candidates else None,
+                )
+                if metric_col:
+                    ranking_display[metric_col] = ranking_display[metric_col].map(lambda x: f"{float(x):.4f}")
                 st.dataframe(ranking_display, use_container_width=True)
 
                 if not ranking_df.empty:
+                    metric_col_plot = metric_col or next((c for c in ranking_df.columns if c != 'Modelo'), ranking_df.columns[1])
                     fig = px.bar(
-                        ranking_df.head(15),                                           
-                        x='Modelo',                                         
-                        y='Score',                                          
-                        title='Top 15 Modelos',                       
-                        color='Score',                                               
-                        color_continuous_scale='Viridis'                                      
+                        ranking_df.head(15),
+                        x='Modelo',
+                        y=metric_col_plot,
+                        title='Top 15 Modelos',
+                        color=metric_col_plot,
+                        color_continuous_scale='Viridis'
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
