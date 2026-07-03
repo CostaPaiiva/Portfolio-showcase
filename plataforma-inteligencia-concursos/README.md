@@ -2,6 +2,8 @@
 
 Data Engineering project to collect, transform, store, analyze, and visualize public exam data in a complete pipeline.
 
+This repository is intended for study and portfolio purposes. The dashboard screenshots and sample dataset are demonstrative, using example data to present the pipeline, analytics layer, and visualization flow.
+
 The focus is on technology-related openings and adjacent areas, with a portfolio-oriented presentation designed for recruiters: clear technical scope, practical delivery, and analytical value.
 
 <p>
@@ -136,10 +138,16 @@ The dashboard was built with Streamlit and Plotly to enable fast visual analysis
 
 | Screen | Image |
 |---|---|
+| Filters and KPIs | `docs/screenshots/dashboard-1.png` |
+| Tables and details | `docs/screenshots/dashboard-2.png` |
 | Home | `dashboard/dashboard_home.png` |
 | Filters | `dashboard/dashboard_filtros.png` |
 | Charts | `dashboard/dashboard_graficos.png` |
 | Additional charts | `dashboard/dashboard_graficos2.png` |
+
+![Dashboard filters and KPIs](docs/screenshots/dashboard-1.png)
+
+![Dashboard tables and details](docs/screenshots/dashboard-2.png)
 
 ## Analytical queries
 
@@ -198,6 +206,7 @@ streamlit run dashboard/app.py
 
 ## notes
 
+- This is a study and portfolio project, and the data used here is sample/demo data.
 - The project shows practical data engineering, not only SQL queries.
 - The dashboard makes the data story easy to scan quickly.
 - The structure highlights pipeline thinking and business value together.
