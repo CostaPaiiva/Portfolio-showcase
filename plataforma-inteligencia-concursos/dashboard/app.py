@@ -27,7 +27,7 @@ from src.database.connection import get_engine
 
 st.set_page_config(
     page_title="Dashboard de Concursos Públicos",
-    page_icon="📊",
+    page_icon=None,
     layout="wide",
 )
 
@@ -177,7 +177,7 @@ df_filtrado = df[
 # TÍTULO
 # ============================================================
 
-st.title("📊 Plataforma de Inteligência para Concursos Públicos")
+st.title("Plataforma de Inteligência para Concursos Públicos")
 
 st.markdown(
     """
