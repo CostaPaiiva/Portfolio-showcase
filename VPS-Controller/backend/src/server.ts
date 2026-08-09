@@ -1,7 +1,7 @@
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import { createHash } from 'node:crypto';
 import { URL } from 'node:url';
-import type { Socket } from 'node:net';
+import type { Duplex } from 'node:stream';
 import { config } from './config.js';
 import { Store } from './store.js';
 import type { ActionType, ContainerSnapshot, MetricSnapshot } from './types.js';
@@ -9,7 +9,7 @@ import type { ActionType, ContainerSnapshot, MetricSnapshot } from './types.js';
 const store = new Store(config.dataFile);
 await store.init();
 const cooldown = new Map<string, number>();
-const wsClients = new Set<Socket>();
+const wsClients = new Set<Duplex>();
 
 function json(res: ServerResponse, status: number, body: unknown): void {
   const data = JSON.stringify(body);
