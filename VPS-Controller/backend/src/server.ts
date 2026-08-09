@@ -43,8 +43,19 @@ function validTarget(value: unknown): value is string { return typeof value === 
 
 function frame(value: string): Buffer {
   const payload = Buffer.from(value);
-  if (payload.length >= 126) throw new Error('websocket_payload_too_large');
-  return Buffer.concat([Buffer.from([0x81, payload.length]), payload]);
+  if (payload.length < 126) return Buffer.concat([Buffer.from([0x81, payload.length]), payload]);
+  if (payload.length < 65536) {
+    const header = Buffer.alloc(4);
+    header[0] = 0x81;
+    header[1] = 126;
+    header.writeUInt16BE(payload.length, 2);
+    return Buffer.concat([header, payload]);
+  }
+  const header = Buffer.alloc(10);
+  header[0] = 0x81;
+  header[1] = 127;
+  header.writeBigUInt64BE(BigInt(payload.length), 2);
+  return Buffer.concat([header, payload]);
 }
 
 function broadcast(event: string, payload: unknown): void {
