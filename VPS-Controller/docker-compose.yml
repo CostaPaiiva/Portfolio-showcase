@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend_data:/app/data
+
+  monitor:
+    build:
+      context: ./monitor
+    restart: unless-stopped
+    env_file:
+      - ./monitor/.env
+    depends_on:
+      - backend
+
+volumes:
+  backend_data:

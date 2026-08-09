@@ -1,0 +1,19 @@
+[Unit]
+Description=VPS Controller Agent
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vpscontroller
+Group=vpscontroller
+WorkingDirectory=/opt/vps-controller-agent
+EnvironmentFile=/opt/vps-controller-agent/.env
+ExecStart=/usr/bin/node /opt/vps-controller-agent/dist/index.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

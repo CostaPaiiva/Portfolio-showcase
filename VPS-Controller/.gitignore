@@ -1,0 +1,44 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*serviceAccount*.json
+**/google-services.json
+**/GoogleService-Info.plist
+*.pem
+*.key
+*.p12
+
+# Node
+node_modules/
+dist/
+coverage/
+*.log
+npm-debug.log*
+
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime data
+backend/data/*.json
+agent/data/
+monitor/data/
+
+# Keep folders
+!backend/data/.gitkeep
