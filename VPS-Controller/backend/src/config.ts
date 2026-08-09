@@ -1,23 +1,37 @@
-import 'dotenv/config';
-import { z } from 'zod';
+import { existsSync, readFileSync } from 'node:fs';
+import process from 'node:process';
 
-const schema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  HOST: z.string().default('0.0.0.0'),
-  PORT: z.coerce.number().int().positive().default(3000),
-  CORS_ORIGINS: z.string().default('http://localhost:3000'),
-  DATA_FILE: z.string().default('./data/state.json'),
-  DEV_USER_TOKEN: z.string().default('change-me-user'),
-  WS_TOKEN: z.string().default('change-me-ws'),
-  AGENT_SHARED_TOKEN: z.string().min(8).default('change-me-agent'),
-  MONITOR_TOKEN: z.string().min(8).default('change-me-monitor'),
-  FIREBASE_PROJECT_ID: z.string().optional(),
-  FIREBASE_CLIENT_EMAIL: z.string().optional(),
-  FIREBASE_PRIVATE_KEY: z.string().optional(),
-  ALERT_CPU_PERCENT: z.coerce.number().min(1).max(100).default(90),
-  ALERT_RAM_PERCENT: z.coerce.number().min(1).max(100).default(90),
-  ALERT_DISK_PERCENT: z.coerce.number().min(1).max(100).default(90),
-  ALERT_COOLDOWN_SECONDS: z.coerce.number().int().positive().default(300)
-});
+function loadDotEnv(): void {
+  if (!existsSync('.env')) return;
+  for (const rawLine of readFileSync('.env', 'utf8').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const index = line.indexOf('=');
+    if (index < 1) continue;
+    const key = line.slice(0, index).trim();
+    let value = line.slice(index + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
 
-export const env = schema.parse(process.env);
+loadDotEnv();
+const numberValue = (name: string, fallback: number) => {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) ? value : fallback;
+};
+
+export const config = {
+  host: process.env.HOST || '0.0.0.0',
+  port: numberValue('PORT', 3000),
+  dataFile: process.env.DATA_FILE || './data/state.json',
+  userToken: process.env.USER_TOKEN || 'change-me-user',
+  agentToken: process.env.AGENT_TOKEN || 'change-me-agent',
+  monitorToken: process.env.MONITOR_TOKEN || 'change-me-monitor',
+  cpuThreshold: numberValue('ALERT_CPU_PERCENT', 90),
+  ramThreshold: numberValue('ALERT_RAM_PERCENT', 90),
+  diskThreshold: numberValue('ALERT_DISK_PERCENT', 90),
+  staleSeconds: numberValue('AGENT_STALE_SECONDS', 60),
+};

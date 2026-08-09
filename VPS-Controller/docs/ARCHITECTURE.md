@@ -1,45 +1,34 @@
-# Arquitetura
+# Arquitetura — MVP 0.2
 
-## Componentes
+## Núcleo atual
 
-### Mobile
-O Flutter consome a API REST e abre WebSocket para atualização em tempo real.
+```text
+Flutter (polling REST)
+        |
+        v
+Backend Node.js/TypeScript
+   |             ^
+   |             |
+   v             |
+JSON state    Agent na VPS
+                 |
+                 +-- CPU/RAM/disco/rede/uptime
+                 +-- Docker list/start/stop/restart
+                 +-- systemd por allowlist
 
-### Backend
-É o ponto central. Recebe heartbeat, métricas, containers, resultados de ações e status do monitor externo. Também mantém fila de ações remotas.
+Monitor externo --------> Backend
+```
 
-### Agent
-Executa dentro da VPS monitorada. Coleta métricas e consulta periodicamente ações pendentes. Nunca recebe comando shell arbitrário.
+O núcleo foi deliberadamente deixado sem dependências de runtime nos componentes Node para reduzir problemas de instalação.
 
-### Monitor
-Executa fora da VPS monitorada e verifica endpoints HTTP.
+## Evolução de produção
 
-## Fluxos
+Adicionar via Codex somente depois do núcleo passar em todos os testes locais:
 
-### Métricas
-`Agent -> POST /api/agent/metrics -> store -> WebSocket -> Mobile`
-
-### Heartbeat
-`Agent -> POST /api/agent/heartbeat -> store -> WebSocket -> Mobile`
-
-### Ação Docker/systemd
-`Mobile -> POST /api/servers/:id/actions -> fila -> Agent -> execução permitida -> resultado -> Backend`
-
-### Disponibilidade externa
-`Monitor -> GET target -> POST /api/monitor/status -> Backend -> alerta`
-
-## Persistência do MVP
-
-O backend usa um arquivo JSON local (`backend/data/state.json`) para deixar o pacote executável sem infraestrutura adicional.
-
-O próximo passo recomendado para produção é substituir o adapter por Firestore/PostgreSQL sem alterar os contratos HTTP.
-
-## Autenticação
-
-- Usuário: Firebase ID Token quando Firebase Admin está configurado.
-- Desenvolvimento: `DEV_USER_TOKEN`.
-- Agente: `x-agent-token`.
-- Monitor: `x-monitor-token`.
-- WebSocket de desenvolvimento: `?token=WS_TOKEN`.
-
-Em produção, substitua o token simples de WebSocket por um ticket curto emitido após autenticação do usuário.
+- Firebase Authentication e FCM.
+- Firestore/PostgreSQL.
+- WebSocket autenticado com ticket curto.
+- RBAC.
+- Métricas agregadas.
+- Logs Docker seguros.
+- TLS/reverse proxy.

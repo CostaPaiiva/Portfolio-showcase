@@ -1,24 +1,2 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { env } from './config.js';
-
-const execFileAsync = promisify(execFile);
-
-export async function serviceAction(
-  type: 'start' | 'stop' | 'restart',
-  service: string
-): Promise<string> {
-  if (!env.allowedServices.has(service)) {
-    throw new Error(`Serviço não autorizado: ${service}`);
-  }
-
-  const command = env.useSudo ? 'sudo' : 'systemctl';
-  const args = env.useSudo ? ['systemctl', type, service] : [type, service];
-
-  const { stdout, stderr } = await execFileAsync(command, args, {
-    timeout: 30_000,
-    maxBuffer: 1024 * 1024
-  });
-
-  return (stdout || stderr || `service.${type} executado em ${service}`).trim();
-}
+import { execFile } from 'node:child_process';import { promisify } from 'node:util';import { config } from './config.js';const run=promisify(execFile);
+export async function serviceAction(op:'start'|'stop'|'restart',name:string){if(!config.allowedServices.has(name))throw new Error(`serviço não autorizado: ${name}`);const cmd=config.sudo?'sudo':'systemctl',args=config.sudo?['systemctl',op,name]:[op,name];const {stdout,stderr}=await run(cmd,args,{timeout:30000,maxBuffer:1024*1024});return(stdout||stderr||`systemctl ${op} ok`).trim();}

@@ -1,13 +1,2 @@
-import axios from 'axios';
-import { env } from './config.js';
-
-export const api = axios.create({
-  baseURL: env.BACKEND_URL,
-  timeout: 10_000,
-  headers: {
-    'x-agent-token': env.AGENT_TOKEN,
-    'x-agent-id': env.AGENT_ID,
-    'x-server-id': env.SERVER_ID,
-    'content-type': 'application/json'
-  }
-});
+import { config } from './config.js';
+export async function api(path:string,init:RequestInit={}){const r=await fetch(config.backendUrl+path,{...init,headers:{'content-type':'application/json','x-agent-token':config.token,...(init.headers||{})},signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error(`${init.method||'GET'} ${path}: ${r.status} ${await r.text()}`);return r.json() as Promise<any>;}

@@ -1,56 +1,6 @@
-import 'package:dio/dio.dart';
-import '../core/app_config.dart';
-import '../models/alert.dart';
-import '../models/server.dart';
-import 'auth_service.dart';
-
-class ApiService {
-  ApiService(this.auth) : _dio = Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl));
-
-  final AuthService auth;
-  final Dio _dio;
-
-  Future<Options> _options() async => Options(
-        headers: {'Authorization': 'Bearer ${await auth.apiToken()}'},
-      );
-
-  Future<List<ServerInfo>> listServers() async {
-    final response = await _dio.get('/api/servers', options: await _options());
-    return ((response.data['servers'] as List?) ?? const [])
-        .map((e) => ServerInfo.fromJson((e as Map).cast<String, dynamic>()))
-        .toList();
-  }
-
-  Future<ServerInfo> getServer(String id) async {
-    final response = await _dio.get('/api/servers/$id', options: await _options());
-    return ServerInfo.fromJson((response.data['server'] as Map).cast<String, dynamic>());
-  }
-
-  Future<List<AlertInfo>> listAlerts() async {
-    final response = await _dio.get('/api/alerts', options: await _options());
-    return ((response.data['alerts'] as List?) ?? const [])
-        .map((e) => AlertInfo.fromJson((e as Map).cast<String, dynamic>()))
-        .toList();
-  }
-
-  Future<void> sendAction({
-    required String serverId,
-    required String type,
-    required String target,
-  }) async {
-    await _dio.post(
-      '/api/servers/$serverId/actions',
-      data: {'type': type, 'target': target},
-      options: await _options(),
-    );
-  }
-
-  Future<String> createWebSocketTicket() async {
-    final response = await _dio.post('/api/ws-ticket', options: await _options());
-    return response.data['ticket'] as String;
-  }
-
-  Future<void> registerDevice(String token) async {
-    await _dio.post('/api/devices', data: {'token': token}, options: await _options());
-  }
-}
+import 'dart:convert';import 'dart:io';import '../core/app_config.dart';import '../models/alert.dart';import '../models/server.dart';
+class ApiService{ApiService({String? token}):token=token??AppConfig.userToken;final String token;Uri _u(String p)=>Uri.parse('${AppConfig.apiBaseUrl}$p');Future<dynamic> _request(String method,String path,{Object? data})async{final c=HttpClient();try{final r=await c.openUrl(method,_u(path));r.headers.set(HttpHeaders.authorizationHeader,'Bearer $token');r.headers.contentType=ContentType.json;if(data!=null)r.write(jsonEncode(data));final x=await r.close();final text=await utf8.decoder.bind(x).join();if(x.statusCode<200||x.statusCode>=300)throw HttpException('HTTP ${x.statusCode}: $text');return text.isEmpty?{}:jsonDecode(text);}finally{c.close();}}
+Future<List<ServerInfo>> listServers()async{final x=await _request('GET','/api/servers') as Map<String,dynamic>;return ((x['servers'] as List?)??[]).map((e)=>ServerInfo.fromJson(Map<String,dynamic>.from(e as Map))).toList();}
+Future<ServerInfo> getServer(String id)async{final x=await _request('GET','/api/servers/${Uri.encodeComponent(id)}') as Map<String,dynamic>;return ServerInfo.fromJson(Map<String,dynamic>.from(x['server'] as Map));}
+Future<List<AlertInfo>> alerts()async{final x=await _request('GET','/api/alerts') as Map<String,dynamic>;return ((x['alerts'] as List?)??[]).map((e)=>AlertInfo.fromJson(Map<String,dynamic>.from(e as Map))).toList();}
+Future<void> action(String serverId,String type,String target) async { await _request('POST','/api/servers/${Uri.encodeComponent(serverId)}/actions',data:{'type':type,'target':target}); }}
