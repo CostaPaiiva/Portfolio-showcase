@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import '../core/app_config.dart';
 
@@ -24,6 +25,7 @@ class AuthService extends ChangeNotifier {
     if (!_firebaseReady && AppConfig.devUserToken.isNotEmpty) {
       _devSignedIn = true;
     }
+    if (_firebaseReady) await FirebaseMessaging.instance.requestPermission();
 
     _loading = false;
     notifyListeners();
@@ -65,4 +67,17 @@ class AuthService extends ChangeNotifier {
     _devSignedIn = false;
     notifyListeners();
   }
+
+  Future<void> createAccount(String email, String password) async {
+    if (!_firebaseReady) throw StateError('Firebase não configurado');
+    await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email.trim(), password: password);
+    notifyListeners();
+  }
+
+  Future<void> resetPassword(String email) async {
+    if (!_firebaseReady) throw StateError('Firebase não configurado');
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: email.trim());
+  }
+
+  Future<String?> fcmToken() => _firebaseReady ? FirebaseMessaging.instance.getToken() : Future.value(null);
 }

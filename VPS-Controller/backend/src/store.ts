@@ -9,6 +9,7 @@ import type {
   RemoteAction,
   ServerRecord,
   ActionType
+  , AgentCredential
 } from './types.js';
 
 const emptyState = (): PersistedState => ({
@@ -16,7 +17,8 @@ const emptyState = (): PersistedState => ({
   history: {},
   actions: {},
   alerts: [],
-  deviceTokens: []
+  deviceTokens: [],
+  agentCredentials: {}
 });
 
 export class JsonStore {
@@ -29,10 +31,32 @@ export class JsonStore {
     try {
       const raw = await readFile(this.filePath, 'utf8');
       this.state = JSON.parse(raw) as PersistedState;
+      this.state.agentCredentials ??= {};
     } catch {
       await mkdir(dirname(this.filePath), { recursive: true });
       await this.persist();
     }
+  }
+
+  async registerAgent(serverId: string, agentId: string, tokenHash: string): Promise<AgentCredential> {
+    const credential: AgentCredential = { serverId, agentId, tokenHash, createdAt: new Date().toISOString(), status: 'active' };
+    this.state.agentCredentials ??= {};
+    this.state.agentCredentials[agentId] = credential;
+    await this.persist();
+    return credential;
+  }
+
+  async getAgent(agentId: string): Promise<AgentCredential | undefined> { return this.state.agentCredentials?.[agentId]; }
+
+  async touchAgent(agentId: string): Promise<void> {
+    const credential = this.state.agentCredentials?.[agentId];
+    if (credential) { credential.lastUsedAt = new Date().toISOString(); await this.persist(); }
+  }
+
+  async revokeAgent(agentId: string): Promise<boolean> {
+    const credential = this.state.agentCredentials?.[agentId];
+    if (!credential) return false;
+    credential.status = 'revoked'; credential.revokedAt = new Date().toISOString(); await this.persist(); return true;
   }
 
   private persist(): Promise<void> {
@@ -98,9 +122,18 @@ export class JsonStore {
 
     const history = this.state.history[serverId] ?? [];
     history.push(metric);
-    // ~24h at a 5s sample. Production should downsample.
-    if (history.length > 17280) history.splice(0, history.length - 17280);
-    this.state.history[serverId] = history;
+    // Keep bounded, time-bucketed history: 1m/24h, 5m/7d, 1h/90d.
+    const sorted = [...history].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    const buckets = new Map<string, MetricSnapshot>();
+    for (const sample of sorted) {
+      const time = new Date(sample.timestamp).getTime();
+      if (time < cutoff) continue;
+      const age = Date.now() - time;
+      const bucketMs = age <= 24 * 60 * 60 * 1000 ? 60_000 : age <= 7 * 24 * 60 * 60 * 1000 ? 300_000 : 3_600_000;
+      buckets.set(String(Math.floor(time / bucketMs)), sample);
+    }
+    this.state.history[serverId] = [...buckets.values()].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     await this.persist();
     return record;
   }

@@ -44,4 +44,13 @@ class ApiService {
       options: await _options(),
     );
   }
+
+  Future<String> createWebSocketTicket() async {
+    final response = await _dio.post('/api/ws-ticket', options: await _options());
+    return response.data['ticket'] as String;
+  }
+
+  Future<void> registerDevice(String token) async {
+    await _dio.post('/api/devices', data: {'token': token}, options: await _options());
+  }
 }

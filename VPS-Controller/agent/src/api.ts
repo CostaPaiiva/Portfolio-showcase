@@ -6,6 +6,8 @@ export const api = axios.create({
   timeout: 10_000,
   headers: {
     'x-agent-token': env.AGENT_TOKEN,
+    'x-agent-id': env.AGENT_ID,
+    'x-server-id': env.SERVER_ID,
     'content-type': 'application/json'
   }
 });

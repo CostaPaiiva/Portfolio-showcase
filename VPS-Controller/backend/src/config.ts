@@ -5,6 +5,7 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   HOST: z.string().default('0.0.0.0'),
   PORT: z.coerce.number().int().positive().default(3000),
+  CORS_ORIGINS: z.string().default('http://localhost:3000'),
   DATA_FILE: z.string().default('./data/state.json'),
   DEV_USER_TOKEN: z.string().default('change-me-user'),
   WS_TOKEN: z.string().default('change-me-ws'),

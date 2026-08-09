@@ -24,11 +24,12 @@ export function firebaseApp(): App | null {
   return app;
 }
 
-export async function verifyUserToken(token: string): Promise<{ uid: string } | null> {
+export async function verifyUserToken(token: string): Promise<{ uid: string; role?: 'user' | 'admin' | 'super_admin' } | null> {
   const fapp = firebaseApp();
   if (!fapp) return null;
   const decoded = await getAuth(fapp).verifyIdToken(token);
-  return { uid: decoded.uid };
+  const role = decoded.role === 'admin' || decoded.role === 'super_admin' ? decoded.role : 'user';
+  return { uid: decoded.uid, role };
 }
 
 export async function sendPush(tokens: string[], title: string, body: string): Promise<void> {

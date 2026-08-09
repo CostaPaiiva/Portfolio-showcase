@@ -12,6 +12,7 @@ const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:3000';
 const monitorToken = process.env.MONITOR_TOKEN || '';
 const intervalMs = Number(process.env.CHECK_INTERVAL_MS || 30000);
 const timeoutMs = Number(process.env.REQUEST_TIMEOUT_MS || 5000);
+const retries = Math.min(3, Math.max(0, Number(process.env.CHECK_RETRIES || 2)));
 
 if (monitorToken.length < 8) throw new Error('MONITOR_TOKEN inválido');
 
@@ -27,10 +28,18 @@ async function report(payload: object): Promise<void> {
 async function checkTarget(target: z.infer<typeof targetSchema>[number]): Promise<void> {
   const started = performance.now();
   try {
-    const response = await axios.get(target.url, {
-      timeout: timeoutMs,
-      validateStatus: () => true
-    });
+    let response;
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        response = await axios.get(target.url, { timeout: timeoutMs, validateStatus: () => true });
+        break;
+      } catch (error) {
+        lastError = error;
+        if (attempt < retries) await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+      }
+    }
+    if (!response) throw (lastError instanceof Error ? lastError : new Error(String(lastError)));
     const latencyMs = Math.round(performance.now() - started);
     const online = response.status >= 200 && response.status < 500;
     await report({

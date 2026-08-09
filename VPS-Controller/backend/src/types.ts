@@ -100,4 +100,18 @@ export interface PersistedState {
   actions: Record<string, RemoteAction>;
   alerts: AlertRecord[];
   deviceTokens: string[];
+  agentCredentials?: Record<string, AgentCredential>;
+  userRoles?: Record<string, UserRole>;
+}
+
+export type UserRole = 'user' | 'admin' | 'super_admin';
+
+export interface AgentCredential {
+  serverId: string;
+  agentId: string;
+  tokenHash: string;
+  createdAt: string;
+  lastUsedAt?: string;
+  revokedAt?: string;
+  status: 'active' | 'revoked';
 }
