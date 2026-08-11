@@ -22,6 +22,9 @@ npm-debug.log*
 
 # Flutter / Dart
 .dart_tool/
+.codex-appdata/
+.codex-localappdata/
+.kotlin/
 .packages
 .pub/
 build/

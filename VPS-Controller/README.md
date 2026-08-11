@@ -233,6 +233,3 @@ O VPS Controller é uma ferramenta privada/self-hosted:
 Seu celular → sua rede Tailscale → sua VPS
 ```
 
-## Licença
-
-Projeto privado. Defina uma licença antes de distribuí-lo publicamente.
