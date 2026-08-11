@@ -4,7 +4,9 @@ import '../services/api_service.dart';
 import '../services/live_service.dart';
 import 'alerts_screen.dart';
 import 'dashboard_screen.dart';
+import 'docker_screen.dart';
 import 'settings_screen.dart';
+import 'system_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell(
@@ -51,13 +53,14 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final title =
-        ['Dashboard', 'Servidores', 'Alertas', 'Configurações'][index];
-    final body = index < 2
-        ? DashboardScreen(key: _dashboardKey, api: widget.api)
-        : index == 2
-            ? AlertsScreen(key: _alertsKey, api: widget.api)
-            : SettingsScreen(onLogout: widget.onLogout);
+    final title = ['Início', 'Docker', 'Sistema', 'Alertas', 'Ajustes'][index];
+    final body = switch (index) {
+      0 => DashboardScreen(key: _dashboardKey, api: widget.api),
+      1 => DockerScreen(api: widget.api),
+      2 => SystemScreen(api: widget.api),
+      3 => AlertsScreen(key: _alertsKey, api: widget.api),
+      _ => SettingsScreen(onLogout: widget.onLogout),
+    };
     return Scaffold(
         appBar: AppBar(title: Text(title)),
         body: body,
@@ -66,13 +69,15 @@ class _HomeShellState extends State<HomeShell> {
           onDestinationSelected: (value) => setState(() => index = value),
           destinations: const [
             NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
+                icon: Icon(Icons.home_outlined), label: 'Início'),
             NavigationDestination(
-                icon: Icon(Icons.dns_outlined), label: 'Servidores'),
+                icon: Icon(Icons.view_list_outlined), label: 'Docker'),
+            NavigationDestination(
+                icon: Icon(Icons.memory_outlined), label: 'Sistema'),
             NavigationDestination(
                 icon: Icon(Icons.notifications_outlined), label: 'Alertas'),
             NavigationDestination(
-                icon: Icon(Icons.settings_outlined), label: 'Config.'),
+                icon: Icon(Icons.settings_outlined), label: 'Ajustes'),
           ],
         ));
   }
