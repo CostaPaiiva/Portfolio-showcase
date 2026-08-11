@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/app_surface.dart';
 import '../services/api_service.dart';
 import '../services/live_service.dart';
 import 'alerts_screen.dart';
@@ -63,7 +64,7 @@ class _HomeShellState extends State<HomeShell> {
     };
     return Scaffold(
         appBar: AppBar(title: Text(title)),
-        body: body,
+        body: AppSurface(child: SafeArea(top: false, child: body)),
         bottomNavigationBar: NavigationBar(
           selectedIndex: index,
           onDestinationSelected: (value) => setState(() => index = value),

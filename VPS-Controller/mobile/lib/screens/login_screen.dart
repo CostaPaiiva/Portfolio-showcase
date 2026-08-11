@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import '../core/app_theme.dart';
+import '../widgets/app_surface.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.onLogin, this.message});
   final Future<void> Function(String token) onLogin;
   final String? message;
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -36,41 +39,77 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Center(
-            child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.dns_rounded, size: 64),
-                    const SizedBox(height: 12),
-                    Text('VPS Controller',
-                        style: Theme.of(context).textTheme.headlineMedium),
-                    const Text('Server Management'),
-                    const SizedBox(height: 28),
-                    TextField(
-                        controller: _controller,
-                        obscureText: true,
-                        enabled: !_loading,
-                        decoration: const InputDecoration(
-                            labelText: 'Token de acesso',
-                            border: OutlineInputBorder())),
-                    if (widget.message != null || _error != null) ...[
-                      const SizedBox(height: 12),
-                      Text(_error ?? widget.message!,
-                          style: const TextStyle(color: Colors.orange)),
-                    ],
-                    const SizedBox(height: 16),
-                    FilledButton(
-                        onPressed: _loading ? null : _submit,
-                        child: _loading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Text('Entrar')),
-                  ]),
-                ))),
+        body: AppSurface(
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Container(
+                          padding: const EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                              color: AppColors.accentDark,
+                              borderRadius: BorderRadius.circular(18)),
+                          child: const Icon(Icons.dns_outlined,
+                              size: 42, color: Colors.white),
+                        ),
+                        const SizedBox(height: 18),
+                        Text('VPS Controller',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 5),
+                        Text('Gerenciamento privado da sua VPS',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: AppColors.muted)),
+                        const SizedBox(height: 28),
+                        TextField(
+                          controller: _controller,
+                          obscureText: true,
+                          enabled: !_loading,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _submit(),
+                          decoration: const InputDecoration(
+                              labelText: 'Token de acesso',
+                              prefixIcon: Icon(Icons.key_outlined)),
+                        ),
+                        if (widget.message != null || _error != null) ...[
+                          const SizedBox(height: 12),
+                          Text(_error ?? widget.message!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  color: AppColors.accentBright)),
+                        ],
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: _loading ? null : _submit,
+                            icon: _loading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white))
+                                : const Icon(Icons.login),
+                            label: Text(_loading ? 'Conectando...' : 'Entrar'),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       );
 }

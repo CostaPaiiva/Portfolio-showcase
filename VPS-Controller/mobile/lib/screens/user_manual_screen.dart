@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/user_manual_content.dart';
 import '../models/manual_section.dart';
+import '../widgets/app_surface.dart';
 
 class UserManualScreen extends StatefulWidget {
   const UserManualScreen({super.key});
@@ -33,7 +34,8 @@ class _UserManualScreenState extends State<UserManualScreen> {
     final sections = _filteredSections;
     return Scaffold(
       appBar: AppBar(title: const Text('Manual do Usuário')),
-      body: CustomScrollView(
+      body: AppSurface(
+          child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(child: _buildHeader(context)),
           if (sections.isEmpty)
@@ -53,7 +55,7 @@ class _UserManualScreenState extends State<UserManualScreen> {
               ),
             ),
         ],
-      ),
+      )),
     );
   }
 

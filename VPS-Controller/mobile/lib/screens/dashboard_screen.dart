@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_config.dart';
+import '../core/app_theme.dart';
 import '../models/alert.dart';
 import '../models/server.dart';
 import '../services/api_service.dart';
@@ -8,6 +9,7 @@ import '../widgets/metric_card.dart';
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, required this.api});
   final ApiService api;
+
   @override
   DashboardScreenState createState() => DashboardScreenState();
 }
@@ -32,9 +34,9 @@ class DashboardScreenState extends State<DashboardScreen> {
     try {
       final result = await Future.wait([
         widget.api.getServer(AppConfig.primaryServerId),
-        widget.api.alerts()
+        widget.api.alerts(),
       ]);
-      if (mounted)
+      if (mounted) {
         setState(() {
           server = result[0] as ServerInfo;
           alerts = (result[1] as List<AlertInfo>)
@@ -43,12 +45,14 @@ class DashboardScreenState extends State<DashboardScreen> {
           error = null;
           loading = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           error = '$e';
           loading = false;
         });
+      }
     } finally {
       _requestActive = false;
     }
@@ -57,8 +61,9 @@ class DashboardScreenState extends State<DashboardScreen> {
   String _bytes(int value) {
     if (value < 1024) return '$value B';
     if (value < 1024 * 1024) return '${(value / 1024).toStringAsFixed(1)} KB';
-    if (value < 1024 * 1024 * 1024)
+    if (value < 1024 * 1024 * 1024) {
       return '${(value / 1048576).toStringAsFixed(1)} MB';
+    }
     return '${(value / 1073741824).toStringAsFixed(1)} GB';
   }
 
@@ -67,74 +72,234 @@ class DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading && server == null)
+    if (loading && server == null) {
       return const Center(child: CircularProgressIndicator());
-    if (error != null && server == null)
-      return Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text(error!),
-        const SizedBox(height: 12),
-        FilledButton(onPressed: refresh, child: const Text('Tentar novamente'))
-      ]));
+    }
+    if (error != null && server == null) {
+      return _ErrorState(
+          message: 'VPS indisponível', details: error!, onRetry: refresh);
+    }
+
     final current = server!;
     final metric = current.metric;
     final running = current.containers
         .where((item) => item.state.toLowerCase() == 'running')
         .length;
+    final activeAlerts = alerts.where((item) => item.status == 'open').length;
+    final online = current.agentStatus.toLowerCase() == 'online';
+
     return RefreshIndicator(
-        onRefresh: refresh,
-        child: ListView(padding: const EdgeInsets.all(16), children: [
-          Row(children: [
-            Icon(Icons.circle,
-                size: 13,
-                color: current.agentStatus == 'online'
-                    ? Colors.green
-                    : Colors.red),
-            const SizedBox(width: 8),
-            Text(current.agentStatus == 'online' ? 'Online' : 'Offline',
-                style: Theme.of(context).textTheme.titleLarge),
-            const Spacer(),
-            IconButton(onPressed: refresh, icon: const Icon(Icons.refresh))
-          ]),
-          Text(current.hostname ?? current.id,
-              style: Theme.of(context).textTheme.headlineSmall),
-          Text(
-              '${current.os ?? 'Sistema não informado'} • ${current.arch ?? 'Arquitetura não informada'}'),
-          if (metric != null) ...[
-            const SizedBox(height: 16),
-            MetricCard(
-                title: 'CPU',
-                value: '${metric.cpuPercent.toStringAsFixed(1)}%',
-                percent: metric.cpuPercent),
-            const SizedBox(height: 8),
-            MetricCard(
-                title: 'RAM',
-                value: '${metric.ram.usedPercent.toStringAsFixed(1)}%',
-                percent: metric.ram.usedPercent,
-                subtitle:
-                    '${_bytes(metric.ram.usedBytes)} / ${_bytes(metric.ram.totalBytes)}'),
-            if (metric.disks.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              MetricCard(
-                  title: 'Disco ${metric.disks.first.mount}',
-                  value:
-                      '${metric.disks.first.usedPercent.toStringAsFixed(1)}%',
-                  percent: metric.disks.first.usedPercent,
-                  subtitle:
-                      '${_bytes(metric.disks.first.usedBytes)} / ${_bytes(metric.disks.first.sizeBytes)}')
+      onRefresh: refresh,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+        children: [
+          Text('VPS CONTROLLER',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.accentBright,
+                    letterSpacing: 1.8,
+                    fontWeight: FontWeight.w700,
+                  )),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(AppConfig.primaryServerId,
+                    style: Theme.of(context).textTheme.headlineSmall),
+              ),
+              Icon(Icons.circle,
+                  size: 11,
+                  color: online ? AppColors.online : AppColors.accentBright),
+              const SizedBox(width: 7),
+              Text(online ? 'ONLINE' : 'OFFLINE',
+                  style: TextStyle(
+                    color: online ? AppColors.online : AppColors.accentBright,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .8,
+                  )),
             ],
-            const SizedBox(height: 12),
-            Text('Uptime: ${_uptime(metric.uptimeSeconds)}'),
-            Text('Rede: ${metric.networks.length} interface(s)'),
+          ),
+          const SizedBox(height: 16),
+          _ServerHero(server: current, online: online, onRefresh: refresh),
+          if (metric != null) ...[
+            const SizedBox(height: 18),
+            Text('Recursos', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 10),
+            LayoutBuilder(builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 620 ? 4 : 2;
+              final width =
+                  (constraints.maxWidth - (columns - 1) * 10) / columns;
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  SizedBox(
+                      width: width,
+                      child: MetricCard(
+                          title: 'CPU',
+                          value: '${metric.cpuPercent.toStringAsFixed(1)}%',
+                          percent: metric.cpuPercent,
+                          icon: Icons.memory_outlined)),
+                  SizedBox(
+                      width: width,
+                      child: MetricCard(
+                          title: 'RAM',
+                          value:
+                              '${metric.ram.usedPercent.toStringAsFixed(1)}%',
+                          percent: metric.ram.usedPercent,
+                          subtitle:
+                              '${_bytes(metric.ram.usedBytes)} / ${_bytes(metric.ram.totalBytes)}',
+                          icon: Icons.sd_storage_outlined)),
+                  if (metric.disks.isNotEmpty)
+                    SizedBox(
+                        width: width,
+                        child: MetricCard(
+                            title: 'Disco ${metric.disks.first.mount}',
+                            value:
+                                '${metric.disks.first.usedPercent.toStringAsFixed(1)}%',
+                            percent: metric.disks.first.usedPercent,
+                            subtitle:
+                                '${_bytes(metric.disks.first.usedBytes)} / ${_bytes(metric.disks.first.sizeBytes)}',
+                            icon: Icons.storage_outlined)),
+                  SizedBox(
+                      width: width,
+                      child: MetricCard(
+                          title: 'Uptime',
+                          value: _uptime(metric.uptimeSeconds),
+                          percent: 0,
+                          icon: Icons.schedule_outlined)),
+                ],
+              );
+            }),
           ],
-          const SizedBox(height: 16),
-          Text('Docker', style: Theme.of(context).textTheme.titleLarge),
-          Text(
-              '${current.containers.length} containers • $running rodando • ${current.containers.length - running} parados'),
-          const SizedBox(height: 16),
-          Text('Alertas ativos', style: Theme.of(context).textTheme.titleLarge),
-          Text(
-              '${alerts.where((item) => item.status == 'open').length} alerta(s)'),
-        ]));
+          const SizedBox(height: 18),
+          _SummaryCard(
+            icon: Icons.dns_outlined,
+            title: 'Docker',
+            value: '${current.containers.length} containers',
+            detail:
+                '$running rodando • ${current.containers.length - running} parados',
+          ),
+          const SizedBox(height: 10),
+          _SummaryCard(
+            icon: Icons.notifications_none_outlined,
+            title: 'Alertas ativos',
+            value: '$activeAlerts',
+            detail: activeAlerts == 1
+                ? 'Alerta requer atenção'
+                : 'Alertas requerem atenção',
+            critical: activeAlerts > 0,
+          ),
+        ],
+      ),
+    );
   }
+}
+
+class _ServerHero extends StatelessWidget {
+  const _ServerHero(
+      {required this.server, required this.online, required this.onRefresh});
+  final ServerInfo server;
+  final bool online;
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.dns_outlined,
+                  color: AppColors.accentBright, size: 27),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Text(server.hostname ?? server.id,
+                      style: Theme.of(context).textTheme.titleLarge)),
+              IconButton(
+                  onPressed: onRefresh,
+                  tooltip: 'Atualizar',
+                  icon: const Icon(Icons.refresh)),
+            ]),
+            const Divider(height: 22),
+            Text(server.os ?? 'Sistema não informado',
+                style: Theme.of(context).textTheme.bodyLarge),
+            const SizedBox(height: 4),
+            Text(
+                "${server.arch ?? 'Arquitetura não informada'} • ${server.kernel ?? 'Kernel não informado'}",
+                style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 12),
+            Row(children: [
+              Icon(
+                  online ? Icons.shield_outlined : Icons.warning_amber_outlined,
+                  color: online ? AppColors.online : AppColors.accentBright,
+                  size: 18),
+              const SizedBox(width: 7),
+              Text(online ? 'Comunicação normal' : 'Sem comunicação recente'),
+            ]),
+          ]),
+        ),
+      );
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard(
+      {required this.icon,
+      required this.title,
+      required this.value,
+      required this.detail,
+      this.critical = false});
+  final IconData icon;
+  final String title, value, detail;
+  final bool critical;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          leading: Icon(icon,
+              color: critical ? AppColors.accentBright : AppColors.accent),
+          title: Text(title),
+          subtitle: Text(detail),
+          trailing: Text(value, style: Theme.of(context).textTheme.titleMedium),
+        ),
+      );
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState(
+      {required this.message, required this.details, required this.onRetry});
+  final String message, details;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.cloud_off_outlined,
+                    color: AppColors.accentBright, size: 42),
+                const SizedBox(height: 12),
+                Text(message, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                const Text(
+                    'Verifique sua conexão, o Tailscale e se a VPS está online.',
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 6),
+                Text(details,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Tentar novamente')),
+              ]),
+            ),
+          ),
+        ),
+      );
 }

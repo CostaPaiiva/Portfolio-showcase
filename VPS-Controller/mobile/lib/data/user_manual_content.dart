@@ -3,6 +3,15 @@ import '../models/manual_section.dart';
 
 const userManualSections = <ManualSection>[
   ManualSection(
+    title: 'Entenda sua VPS',
+    icon: Icons.account_tree_outlined,
+    paragraphs: [
+      'A VPS é a máquina principal. Dentro dela ficam o VPS Controller, seus serviços e os containers Docker.',
+      'PostgreSQL, Redis e Portainer não são outras VPS: são serviços ou containers executados dentro da máquina principal.',
+      'Visão conceitual: VPS → VPS Controller (Backend + Agent) → Docker (aplicações e serviços).',
+    ],
+  ),
+  ManualSection(
     title: 'Primeiros passos',
     icon: Icons.route_outlined,
     paragraphs: [
@@ -64,6 +73,21 @@ const userManualSections = <ManualSection>[
     ],
   ),
   ManualSection(
+    title: 'Containers',
+    icon: Icons.widgets_outlined,
+    paragraphs: [
+      'Um container é um ambiente isolado onde uma aplicação ou serviço pode rodar. O nome real, a imagem, o status e as portas exibidos são os dados retornados pela API.',
+      'A quantidade de containers do dashboard e da tela Docker não é fixa. Ela muda conforme o ambiente monitorado.',
+    ],
+  ),
+  ManualSection(
+    title: 'Rede',
+    icon: Icons.lan_outlined,
+    paragraphs: [
+      'A tela Sistema mostra as interfaces e as métricas de rede que o Agent conseguiu coletar. Ausência de um dado significa que ele não foi fornecido pela API, não que a interface não exista.',
+    ],
+  ),
+  ManualSection(
     title: 'Start, Stop e Restart',
     icon: Icons.restart_alt_outlined,
     paragraphs: [
@@ -73,6 +97,28 @@ const userManualSections = <ManualSection>[
     ],
     warning:
         'Antes de Stop ou Restart, confirme a ação e verifique quais serviços dependem do recurso. Nunca use Stop como primeira solução para qualquer problema.',
+  ),
+  ManualSection(
+    title: 'Start',
+    icon: Icons.play_arrow_outlined,
+    paragraphs: [
+      'Start solicita a inicialização de um container parado. Use a ação somente depois de entender por que o serviço está parado.'
+    ],
+  ),
+  ManualSection(
+    title: 'Stop',
+    icon: Icons.stop_outlined,
+    paragraphs: [
+      'Stop encerra o container. A confirmação existe porque a ação pode interromper sites, APIs, bancos ou filas que dependam dele.'
+    ],
+    warning: 'Parar um serviço de produção pode causar indisponibilidade.',
+  ),
+  ManualSection(
+    title: 'Restart',
+    icon: Icons.restart_alt_outlined,
+    paragraphs: [
+      'Restart para e inicia novamente o container. É uma ação administrativa e causa uma pequena interrupção.'
+    ],
   ),
   ManualSection(
     title: 'PostgreSQL, Redis e Portainer',

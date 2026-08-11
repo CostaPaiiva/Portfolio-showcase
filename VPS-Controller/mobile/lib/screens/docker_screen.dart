@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_config.dart';
+import '../core/app_theme.dart';
 import '../models/server.dart';
 import '../services/api_service.dart';
 
@@ -49,14 +50,18 @@ class _DockerScreenState extends State<DockerScreen> {
           builder: (context) => AlertDialog(
                   title: Text(
                       '${operation == 'stop' ? 'Parar' : 'Reiniciar'} container?'),
-                  content: Text(container.name),
+                  content: Text(operation == 'stop'
+                      ? 'Parar ${container.name} pode deixar aplicações ou serviços indisponíveis.'
+                      : 'Tem certeza que deseja reiniciar ${container.name}?'),
                   actions: [
                     TextButton(
                         onPressed: () => Navigator.pop(context, false),
                         child: const Text('Cancelar')),
                     FilledButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Confirmar'))
+                        child: Text(operation == 'stop'
+                            ? 'Parar container'
+                            : 'Reiniciar'))
                   ]));
       if (confirmed != true) return;
     }
@@ -92,8 +97,25 @@ class _DockerScreenState extends State<DockerScreen> {
         onRefresh: refresh,
         child: ListView(padding: const EdgeInsets.all(12), children: [
           Row(children: [
-            Text('${containers.length} containers',
-                style: Theme.of(context).textTheme.titleLarge),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('DOCKER',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.accentBright,
+                          letterSpacing: 1.8,
+                          fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text('${containers.length} containers',
+                      style: Theme.of(context).textTheme.headlineSmall),
+                  Text(
+                      '${containers.where((c) => c.state.toLowerCase() == 'running').length} online • ${containers.where((c) => c.state.toLowerCase() != 'running').length} parados',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: AppColors.muted)),
+                ])),
             const Spacer(),
             IconButton(onPressed: refresh, icon: const Icon(Icons.refresh))
           ]),
@@ -118,15 +140,20 @@ class _DockerScreenState extends State<DockerScreen> {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Icon(Icons.circle,
-                    size: 12, color: running ? Colors.green : Colors.red),
+                    size: 12,
+                    color: running ? AppColors.online : AppColors.accentBright),
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(container.name,
                         style: Theme.of(context).textTheme.titleMedium)),
                 if (postgres) const Chip(label: Text('PostgreSQL'))
               ]),
-              Text(container.status),
-              Text(container.image),
+              Text(container.status,
+                  style: TextStyle(
+                      color: running ? AppColors.online : AppColors.muted,
+                      fontWeight: FontWeight.w600)),
+              Text(container.image,
+                  style: Theme.of(context).textTheme.bodySmall),
               if (container.ports.isNotEmpty)
                 Text('Portas: ${container.ports.join(', ')}'),
               if (container.cpuPercent != null)
