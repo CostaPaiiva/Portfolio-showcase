@@ -155,10 +155,10 @@ class DashboardScreenState extends State<DashboardScreen> {
                         child: MetricCard(
                             title: 'Disco ${metric.disks.first.mount}',
                             value:
-                                '${metric.disks.first.usedPercent.toStringAsFixed(1)}%',
+                                '${_bytes(metric.disks.first.usedBytes)} / ${_bytes(metric.disks.first.sizeBytes)}',
                             percent: metric.disks.first.usedPercent,
                             subtitle:
-                                '${_bytes(metric.disks.first.usedBytes)} / ${_bytes(metric.disks.first.sizeBytes)}',
+                                '${metric.disks.first.usedPercent.toStringAsFixed(1)}% usado',
                             icon: Icons.storage_outlined)),
                   SizedBox(
                       width: width,
