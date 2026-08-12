@@ -70,6 +70,12 @@ class DashboardScreenState extends State<DashboardScreen> {
   String _uptime(int seconds) =>
       '${seconds ~/ 86400}d ${(seconds % 86400) ~/ 3600}h ${(seconds % 3600) ~/ 60}m';
 
+  String _rate(double value) {
+    if (value < 1024) return '${value.toStringAsFixed(0)} B/s';
+    if (value < 1024 * 1024) return '${(value / 1024).toStringAsFixed(1)} KB/s';
+    return '${(value / 1048576).toStringAsFixed(1)} MB/s';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading && server == null) {
@@ -120,6 +126,12 @@ class DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 16),
           _ServerHero(server: current, online: online, onRefresh: refresh),
+          const SizedBox(height: 12),
+          _ConnectionOverview(
+            agentOnline: online,
+            externalStatus: current.externalStatus,
+            lastHeartbeatAt: current.lastHeartbeatAt,
+          ),
           if (metric != null) ...[
             const SizedBox(height: 18),
             Text('Recursos', style: Theme.of(context).textTheme.titleLarge),
@@ -172,6 +184,10 @@ class DashboardScreenState extends State<DashboardScreen> {
             }),
           ],
           const SizedBox(height: 18),
+          if (metric != null && metric.networks.isNotEmpty) ...[
+            _NetworkSummary(networks: metric.networks, rate: _rate),
+            const SizedBox(height: 12),
+          ],
           _SummaryCard(
             icon: Icons.dns_outlined,
             title: 'Docker',
@@ -239,6 +255,154 @@ class _ServerHero extends StatelessWidget {
           ]),
         ),
       );
+}
+
+class _ConnectionOverview extends StatelessWidget {
+  const _ConnectionOverview({
+    required this.agentOnline,
+    required this.externalStatus,
+    required this.lastHeartbeatAt,
+  });
+
+  final bool agentOnline;
+  final String externalStatus;
+  final String? lastHeartbeatAt;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Wrap(
+            spacing: 18,
+            runSpacing: 10,
+            children: [
+              _StatusItem(
+                icon: Icons.smart_toy_outlined,
+                label: 'Agent',
+                value: agentOnline ? 'Online' : 'Offline',
+                color: agentOnline ? AppColors.online : AppColors.accentBright,
+              ),
+              _StatusItem(
+                icon: Icons.public_outlined,
+                label: 'Monitor',
+                value: externalStatus == 'online' ? 'Online' : externalStatus,
+                color: externalStatus == 'online'
+                    ? AppColors.online
+                    : AppColors.muted,
+              ),
+              _StatusItem(
+                icon: Icons.access_time_outlined,
+                label: 'Último heartbeat',
+                value: _timeLabel(lastHeartbeatAt),
+                color: AppColors.muted,
+              ),
+            ],
+          ),
+        ),
+      );
+
+  String _timeLabel(String? value) {
+    if (value == null) return 'Não informado';
+    final date = DateTime.tryParse(value)?.toLocal();
+    if (date == null) return 'Não informado';
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return 'Hoje às $hour:$minute';
+  }
+}
+
+class _StatusItem extends StatelessWidget {
+  const _StatusItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label, value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 7),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.muted)),
+              Text(value,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w700)),
+            ],
+          ),
+        ],
+      );
+}
+
+class _NetworkSummary extends StatelessWidget {
+  const _NetworkSummary({required this.networks, required this.rate});
+  final List<NetworkMetric> networks;
+  final String Function(double) rate;
+
+  @override
+  Widget build(BuildContext context) {
+    final rx =
+        networks.fold<double>(0, (total, item) => total + item.rxBytesPerSec);
+    final tx =
+        networks.fold<double>(0, (total, item) => total + item.txBytesPerSec);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.lan_outlined,
+                color: AppColors.accentBright, size: 20),
+            const SizedBox(width: 8),
+            Text('Rede', style: Theme.of(context).textTheme.titleMedium),
+            const Spacer(),
+            Text('${networks.length} interface(s)',
+                style: Theme.of(context).textTheme.bodySmall),
+          ]),
+          const SizedBox(height: 14),
+          Row(children: [
+            Expanded(
+                child: _TrafficValue(
+                    icon: Icons.arrow_downward,
+                    label: 'Recebendo',
+                    value: rate(rx))),
+            Expanded(
+                child: _TrafficValue(
+                    icon: Icons.arrow_upward,
+                    label: 'Enviando',
+                    value: rate(tx))),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
+class _TrafficValue extends StatelessWidget {
+  const _TrafficValue(
+      {required this.icon, required this.label, required this.value});
+  final IconData icon;
+  final String label, value;
+
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Icon(icon, color: AppColors.accent, size: 18),
+        const SizedBox(width: 7),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          Text(value, style: Theme.of(context).textTheme.titleMedium),
+        ]),
+      ]);
 }
 
 class _SummaryCard extends StatelessWidget {
