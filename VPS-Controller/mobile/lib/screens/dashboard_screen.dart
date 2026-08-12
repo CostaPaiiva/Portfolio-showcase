@@ -133,6 +133,13 @@ class DashboardScreenState extends State<DashboardScreen> {
             lastHeartbeatAt: current.lastHeartbeatAt,
           ),
           if (metric != null) ...[
+            const SizedBox(height: 12),
+            _OperationalInsight(
+              metric: metric,
+              agentOnline: online,
+              externalStatus: current.externalStatus,
+              activeAlerts: activeAlerts,
+            ),
             const SizedBox(height: 18),
             Text('Recursos', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 10),
@@ -182,6 +189,11 @@ class DashboardScreenState extends State<DashboardScreen> {
                 ],
               );
             }),
+            if (metric.disks.length > 1) ...[
+              const SizedBox(height: 12),
+              _AdditionalDisks(
+                  disks: metric.disks.skip(1).toList(), bytes: _bytes),
+            ],
           ],
           const SizedBox(height: 18),
           if (metric != null && metric.networks.isNotEmpty) ...[
@@ -309,6 +321,118 @@ class _ConnectionOverview extends StatelessWidget {
     final minute = date.minute.toString().padLeft(2, '0');
     return 'Hoje às $hour:$minute';
   }
+}
+
+class _OperationalInsight extends StatelessWidget {
+  const _OperationalInsight({
+    required this.metric,
+    required this.agentOnline,
+    required this.externalStatus,
+    required this.activeAlerts,
+  });
+
+  final ServerMetric metric;
+  final bool agentOnline;
+  final String externalStatus;
+  final int activeAlerts;
+
+  @override
+  Widget build(BuildContext context) {
+    final messages = <String>[];
+    if (!agentOnline)
+      messages
+          .add('O Agent está offline; as métricas podem estar desatualizadas.');
+    if (externalStatus == 'offline')
+      messages.add('O monitor externo reportou a VPS como offline.');
+    if (metric.cpuPercent >= 80)
+      messages.add(
+          'CPU em ${metric.cpuPercent.toStringAsFixed(1)}% no último envio.');
+    if (metric.ram.usedPercent >= 80)
+      messages.add(
+          'RAM em ${metric.ram.usedPercent.toStringAsFixed(1)}% no último envio.');
+    for (final disk in metric.disks.where((item) => item.usedPercent >= 80)) {
+      messages.add(
+          'O disco ${disk.mount} está em ${disk.usedPercent.toStringAsFixed(1)}% de uso.');
+    }
+    if (activeAlerts > 0)
+      messages.add('$activeAlerts alerta(s) ativo(s) requerem revisão.');
+    final attention = !agentOnline ||
+        externalStatus == 'offline' ||
+        metric.cpuPercent >= 80 ||
+        metric.ram.usedPercent >= 80 ||
+        metric.disks.any((item) => item.usedPercent >= 80) ||
+        activeAlerts > 0;
+    if (messages.isEmpty)
+      messages.add(
+          'Sem condição de atenção identificada nos dados recebidos agora.');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(
+                attention
+                    ? Icons.tips_and_updates_outlined
+                    : Icons.check_circle_outline,
+                color: attention ? AppColors.warning : AppColors.online,
+                size: 20),
+            const SizedBox(width: 8),
+            Text(attention ? 'Pontos para acompanhar' : 'Panorama operacional',
+                style: Theme.of(context).textTheme.titleMedium),
+          ]),
+          const SizedBox(height: 9),
+          for (final message in messages)
+            Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child:
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('•  '),
+                Expanded(
+                    child: Text(message,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: AppColors.muted)))
+              ]),
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _AdditionalDisks extends StatelessWidget {
+  const _AdditionalDisks({required this.disks, required this.bytes});
+  final List<DiskMetric> disks;
+  final String Function(int) bytes;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Outros volumes',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 7),
+            for (final disk in disks)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(children: [
+                  Expanded(child: Text(disk.mount)),
+                  Text('${bytes(disk.usedBytes)} / ${bytes(disk.sizeBytes)}',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.muted)),
+                  const SizedBox(width: 10),
+                  Text('${disk.usedPercent.toStringAsFixed(0)}%',
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                ]),
+              ),
+          ]),
+        ),
+      );
 }
 
 class _StatusItem extends StatelessWidget {
