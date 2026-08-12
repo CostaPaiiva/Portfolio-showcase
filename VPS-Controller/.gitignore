@@ -6,11 +6,19 @@
 **/.env.*
 !**/.env.example
 *serviceAccount*.json
+secrets/
+.secrets/
+.npmrc
 **/google-services.json
 **/GoogleService-Info.plist
 *.pem
 *.key
 *.p12
+*.pfx
+*.jks
+*.keystore
+*.kdbx
+*.age
 
 # Node
 node_modules/
@@ -19,6 +27,11 @@ dist/
 coverage/
 *.log
 npm-debug.log*
+
+# Local deployment packages
+*.tar.gz
+*.zip
+*.7z
 
 # Flutter / Dart
 .dart_tool/
