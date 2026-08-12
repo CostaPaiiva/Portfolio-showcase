@@ -1,160 +1,154 @@
 # VPS Controller
 
-Plataforma privada para monitoramento e gerenciamento controlado de uma VPS Linux, com aplicativo Flutter, Backend Node.js/TypeScript, Agent executado no servidor e Monitor externo.
+<p align="center">
+  <strong>Monitoramento e administração controlada de uma VPS Linux, a partir de um aplicativo Flutter.</strong>
+</p>
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-22.x-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![GitHub Actions](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
+<p align="center">
+  Flutter · Dart · Node.js · TypeScript · Docker · systemd · WebSocket · GitHub Actions
+</p>
+
+<p align="center">
+  <a href="#arquitetura">Arquitetura</a> ·
+  <a href="#segurança">Segurança</a> ·
+  <a href="#desenvolvimento">Desenvolvimento</a> ·
+  <a href="#ci">CI</a>
+</p>
+
+[![Flutter](https://img.shields.io/badge/Flutter-Mobile-02569B?logo=flutter&logoColor=white)](https://flutter.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)](.github/workflows/ci.yml)
 
 ## Visão geral
 
-O VPS Controller centraliza, em um aplicativo Android, o acompanhamento do estado de uma VPS e a execução de ações administrativas previamente permitidas.
+O VPS Controller é uma plataforma privada para acompanhar o estado de uma VPS Linux e executar ações operacionais previsíveis, por uma interface mobile.
 
-O sistema reúne:
+Em vez de expor um terminal remoto, o projeto usa uma arquitetura com responsabilidades separadas: o aplicativo apresenta os dados, o Backend concentra autenticação e estado, e o Agent instalado na VPS coleta informações e executa apenas operações autorizadas.
 
-- métricas de CPU, memória, disco, uptime e rede;
-- hostname, sistema operacional, kernel e arquitetura;
-- descoberta e status de containers Docker;
-- ações Docker `start`, `stop` e `restart`;
-- ações systemd sujeitas a allowlist;
-- heartbeat do Agent;
-- monitoramento externo de disponibilidade;
-- alertas com cooldown e deduplicação;
-- atualização por REST e WebSocket;
-- manual de usuário offline no aplicativo.
+### O que o projeto entrega
 
-O projeto não oferece shell remoto nem execução arbitrária de comandos.
+| Área | Recursos implementados |
+| --- | --- |
+| Observabilidade | CPU, RAM, discos, uptime, carga do sistema, interfaces de rede, hostname, SO, kernel e arquitetura |
+| Infraestrutura | Descoberta de containers Docker, status e informações disponíveis por container |
+| Operação | `start`, `stop` e `restart` para Docker; ações systemd sujeitas a allowlist |
+| Disponibilidade | Heartbeat do Agent, monitor HTTP externo, alertas, cooldown e deduplicação |
+| Aplicativo | Login, dashboard, Docker, Sistema, Alertas, Ajustes e Manual do Usuário offline |
+| Comunicação | REST para operações e WebSocket para eventos do Backend |
+
+> O projeto não oferece shell arbitrário e não executa comandos enviados livremente pela interface.
 
 ## Arquitetura
 
 ```mermaid
-flowchart TD
-    A[Flutter Mobile App] -->|REST / WebSocket| B[Backend Node.js]
-    B -->|Agent token| C[Agent Node.js na VPS]
-    C --> D[Métricas Linux]
-    C --> E[Docker Engine]
-    C --> F[systemd com allowlist]
-    G[Monitor Node.js] -->|health/status| B
-    H[GitHub Actions] --> I[CI: build, typecheck e testes]
+flowchart LR
+    U[Usuário] --> M[Flutter Mobile App]
+    M -->|REST + WebSocket| B[Backend Node.js / TypeScript]
+    B -->|Estado, sessões, alertas e fila| S[(Estado JSON)]
+    A[Agent Node.js na VPS] -->|Heartbeat, métricas e containers| B
+    B -->|Ações pendentes| A
+    A --> L[Linux]
+    A --> D[Docker Engine]
+    A --> Y[systemd com allowlist]
+    X[Monitor HTTP] -->|Status e latência| B
+    G[GitHub Actions] -->|CI| R[Build, typecheck e testes]
 ```
 
-### Mobile
+| Componente | Responsabilidade |
+| --- | --- |
+| `mobile/` | Interface Flutter, sessão segura, dashboard e ações controladas |
+| `backend/` | API, autenticação, estado, alertas, WebSocket e fila de ações |
+| `agent/` | Coleta de métricas, Docker, systemd e execução de ações permitidas |
+| `monitor/` | Verificação periódica de targets HTTP e reporte de disponibilidade |
+| `docker/` | Arquivos de apoio para execução e unit do Agent |
 
-Aplicativo Flutter para autenticação, dashboard, sistema, Docker, alertas, ajustes e manual offline. A interface utiliza os dados recebidos pela API e não executa Docker ou comandos Linux diretamente.
-
-### Backend
-
-API Node.js/TypeScript responsável por autenticação do usuário, sessões, estado dos servidores, métricas, alertas, fila de ações, health check e WebSocket.
-
-O estado atual é persistido em arquivo JSON configurável por `DATA_FILE`.
-
-### Agent
-
-Processo Node.js executado diretamente na VPS. Envia heartbeat, coleta métricas, descobre containers, consulta ações pendentes e executa somente operações Docker e systemd autorizadas.
-
-### Monitor
-
-Processo Node.js independente que verifica targets HTTP periodicamente e informa ao Backend se o endpoint está online ou offline.
-
-### GitHub Actions
-
-O workflow `.github/workflows/ci.yml` executa CI para `backend`, `agent` e `monitor` em pushes e pull requests. Atualmente ele instala dependências, executa typecheck e testes quando disponíveis. Não há workflow de deploy automático via SSH neste repositório.
-
-## Fluxo da aplicação
+## Fluxo operacional
 
 ```text
 Usuário
-   ↓
+  ↓ login com usuário e senha
 Aplicativo Flutter
-   ↓ usuário/senha
-POST /auth/login
-   ↓ token de sessão
+  ↓ token de sessão
 Backend
-   ↓ estado, métricas e ações
-Agent
-   ↓
-Linux / Docker / systemd
+  ├── consulta o estado atual da VPS
+  ├── recebe métricas e heartbeat do Agent
+  ├── recebe disponibilidade do Monitor
+  └── mantém ações pendentes
+       ↓
+Agent na VPS
+  ├── Linux: CPU, RAM, disco, uptime e rede
+  ├── Docker: containers e ações permitidas
+  └── systemd: serviços presentes na allowlist
 ```
 
-O Agent mantém comunicação própria com o Backend usando `AGENT_TOKEN`. O Monitor usa `MONITOR_TOKEN`. Essas credenciais internas são distintas da sessão do usuário do aplicativo.
+O aplicativo não acessa Docker ou systemd diretamente. As operações passam pelo Backend, entram na fila e são executadas pelo Agent na VPS.
 
 ## Segurança
 
-### Autenticação do aplicativo
+### Autenticação humana
 
-O aplicativo envia usuário e senha para `POST /auth/login`. O Backend:
+O login do aplicativo usa usuário e senha. A senha é enviada apenas para `POST /auth/login` e o Backend:
 
-1. compara o usuário configurado;
+1. valida o usuário configurado;
 2. verifica a senha contra um hash `scrypt` armazenado no servidor;
-3. gera um token de sessão assinado com HMAC-SHA256;
-4. inclui expiração no token;
-5. retorna somente o token e seu tempo de validade.
+3. cria uma sessão assinada com HMAC-SHA256;
+4. aplica expiração configurável à sessão;
+5. retorna ao aplicativo somente o token de sessão e seu prazo.
 
-O Flutter armazena apenas o token de sessão usando `flutter_secure_storage`. A senha não é persistida pelo aplicativo. O logout remove o token salvo.
+O Flutter persiste somente o token em `flutter_secure_storage`. A senha não é armazenada pelo aplicativo e o logout remove a sessão local.
 
-### Autenticação interna
+### Credenciais separadas por responsabilidade
 
-- `AGENT_TOKEN`: autentica heartbeat, métricas, containers e ações do Agent.
-- `MONITOR_TOKEN`: autentica os reports do Monitor.
-- Sessão do usuário: autentica as rotas REST do aplicativo e o WebSocket.
-
-As variáveis devem ser mantidas em `.env` fora do Git. Nunca publique senhas, hashes, tokens, `JWT_SECRET`, chaves SSH ou IPs privados da infraestrutura.
-
-### Ações controladas
-
-O Backend aceita apenas:
-
-```text
-docker.start
-docker.stop
-docker.restart
-service.start
-service.stop
-service.restart
-```
-
-O Agent valida a família da ação, o alvo Docker e a allowlist de serviços systemd. Não existe endpoint de shell arbitrário.
-
-O acesso ao Docker Socket concede privilégios elevados no host; por isso, o usuário e as permissões do Agent devem ser restritos na VPS.
-
-## Tecnologias
-
-| Tecnologia | Finalidade |
+| Credencial | Uso |
 | --- | --- |
-| Flutter / Dart | Aplicativo mobile |
-| Node.js | Backend, Agent e Monitor |
-| TypeScript | Código dos componentes Node |
-| HTTP REST | API e comunicação com Agent/Monitor |
-| WebSocket | Eventos em tempo real |
-| scrypt | Hash seguro de senha |
-| HMAC-SHA256 | Assinatura do token de sessão |
-| Docker | Containers administrados pelo Agent |
-| systemd | Serviços Linux sujeitos a allowlist |
-| GitHub Actions | Integração contínua |
-| JSON | Persistência local do estado do Backend |
+| Sessão do usuário | Rotas da API usadas pelo aplicativo e WebSocket |
+| `AGENT_TOKEN` | Heartbeat, métricas, containers e ações do Agent |
+| `MONITOR_TOKEN` | Reportes de disponibilidade enviados pelo Monitor |
 
-## Estrutura do projeto
+### Ações permitidas
 
 ```text
-VPS-Controller/
-├── agent/                  # Agent executado na VPS
-├── backend/                # API e estado da plataforma
-├── docker/                 # Service unit e configuração relacionada
-├── docs/                   # Arquitetura, setup, segurança e validações
-├── mobile/                 # Aplicativo Flutter
-├── monitor/                # Monitor externo HTTP
-├── scripts/                # Scripts de preparação local
-├── .github/workflows/      # CI do projeto Node
-├── docker-compose.yml      # Backend e Monitor em desenvolvimento
-└── README.md
+docker.start       docker.stop       docker.restart
+service.start      service.stop      service.restart
 ```
+
+O Backend aceita apenas os tipos listados. O Agent valida o alvo Docker e impede ações systemd fora de `ALLOWED_SERVICES`.
+
+> Docker Socket equivale a privilégio elevado no host. Em produção, o Agent deve rodar com o menor conjunto possível de permissões e regras `sudoers` específicas quando necessárias.
+
+## Aplicativo Flutter
+
+O aplicativo foi pensado para uso operacional rápido em uma VPS principal:
+
+- **Início:** status de Agent e Monitor, último heartbeat, CPU, RAM, disco, uptime, rede, containers, alertas e indicadores de atenção.
+- **Docker:** visão consolidada dos containers, status, portas e métricas disponíveis, com confirmação para parar ou reiniciar.
+- **Sistema:** inventário do host, carga, todos os volumes reportados e interfaces de rede.
+- **Alertas:** avisos retornados pelo Backend, com severidade e estado.
+- **Ajustes:** endpoints configurados, sessão local, informações do app e logout.
+- **Manual do Usuário:** conteúdo local pesquisável, disponível mesmo sem conexão com a VPS.
+
+Para iniciar o app em desenvolvimento:
+
+```bash
+cd mobile
+flutter pub get
+flutter analyze
+flutter test
+
+flutter run \
+  --dart-define=API_BASE_URL=http://SEU_SERVIDOR:PORTA \
+  --dart-define=WS_URL=ws://SEU_SERVIDOR:PORTA/ws
+```
+
+Não inclua usuário, senha ou token de sessão em `dart-define` ou no código-fonte.
 
 ## Backend
 
-O Backend expõe health check, autenticação, servidores, histórico, alertas, ações e endpoints internos para Agent e Monitor.
+O Backend concentra a API e o estado operacional. Ele expõe health check, login, leitura de servidores, histórico, alertas, fila de ações, endpoints internos para Agent/Monitor e WebSocket.
 
-Comandos disponíveis:
+O estado é persistido em arquivo JSON configurável por `DATA_FILE`.
 
 ```bash
 cd backend
@@ -165,30 +159,23 @@ npm run build
 npm start
 ```
 
-Durante desenvolvimento:
+Durante o desenvolvimento:
 
 ```bash
 npm run dev
-```
-
-Health check:
-
-```bash
 curl http://localhost:3000/health
 ```
 
 ## Agent
 
-O Agent usa intervalos configuráveis para executar as tarefas:
+O Agent roda dentro da VPS e executa ciclos independentes e configuráveis para:
 
 - heartbeat;
-- métricas;
+- métricas do Linux;
 - descoberta de containers;
-- consulta de ações.
+- consulta e retorno de ações.
 
-Os intervalos são definidos por `HEARTBEAT_INTERVAL_MS`, `METRICS_INTERVAL_MS`, `CONTAINERS_INTERVAL_MS` e `ACTIONS_INTERVAL_MS`.
-
-Comandos:
+As frequências são definidas por `HEARTBEAT_INTERVAL_MS`, `METRICS_INTERVAL_MS`, `CONTAINERS_INTERVAL_MS` e `ACTIONS_INTERVAL_MS`.
 
 ```bash
 cd agent
@@ -198,39 +185,11 @@ npm run build
 npm start
 ```
 
-Em produção, o arquivo `docker/vps-controller-agent.service` pode ser adaptado para execução via systemd. O projeto não inclui um workflow de instalação automática da VPS.
-
-## Aplicativo Flutter
-
-Telas atuais:
-
-- Login com usuário e senha;
-- Início/dashboard da VPS principal;
-- Docker;
-- Sistema;
-- Alertas;
-- Ajustes;
-- Manual do Usuário offline.
-
-O dashboard apresenta CPU, RAM, capacidade utilizada do disco, uptime, rede, containers e alertas quando esses dados estiverem disponíveis na API.
-
-Comandos de desenvolvimento:
-
-```bash
-cd mobile
-flutter pub get
-flutter analyze
-flutter test
-flutter run \
-  --dart-define=API_BASE_URL=http://SEU_SERVIDOR:PORTA \
-  --dart-define=WS_URL=ws://SEU_SERVIDOR:PORTA/ws
-```
-
-O usuário não deve ser colocado em `dart-define` nem no código-fonte.
+Há uma unit de referência em `docker/vps-controller-agent.service` para adaptação a systemd.
 
 ## Monitor
 
-O Monitor recebe targets por `MONITOR_TARGETS_JSON`, verifica cada URL a partir de `CHECK_INTERVAL_MS` e reporta status e latência ao Backend.
+O Monitor verifica URLs configuradas em `MONITOR_TARGETS_JSON`, mede a latência e informa o resultado ao Backend com `MONITOR_TOKEN`.
 
 ```bash
 cd monitor
@@ -242,7 +201,7 @@ npm start
 
 ## Configuração
 
-Copie os exemplos e preencha valores somente no ambiente local ou na VPS:
+Crie arquivos locais a partir dos exemplos, sem versionar seus valores reais:
 
 ```bash
 cp backend/.env.example backend/.env
@@ -256,63 +215,95 @@ cp monitor/.env.example monitor/.env
 HOST=0.0.0.0
 PORT=3000
 DATA_FILE=./data/state.json
+
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD_HASH=<hash-scrypt-gerado-fora-do-repositorio>
+ADMIN_PASSWORD_HASH=<hash-scrypt>
 JWT_SECRET=<segredo-aleatorio>
 SESSION_TTL_SECONDS=86400
-AGENT_TOKEN=<token-do-agent>
-MONITOR_TOKEN=<token-do-monitor>
+
+AGENT_TOKEN=<segredo-do-agent>
+MONITOR_TOKEN=<segredo-do-monitor>
+
 ALERT_CPU_PERCENT=90
 ALERT_RAM_PERCENT=90
 ALERT_DISK_PERCENT=90
 AGENT_STALE_SECONDS=60
 ```
 
-### Agent
+### Agent e Monitor
 
-As variáveis principais são `BACKEND_URL`, `SERVER_ID`, `AGENT_ID`, `AGENT_VERSION`, `AGENT_TOKEN`, `ALLOWED_SERVICES`, `SYSTEMD_USE_SUDO` e os intervalos de execução. Consulte `agent/.env.example`.
+Consulte os arquivos [agent/.env.example](agent/.env.example) e [monitor/.env.example](monitor/.env.example). Eles documentam, respectivamente, a URL do Backend, identidade do servidor, allowlist, intervalos e targets de monitoramento.
 
-### Monitor
+## Desenvolvimento
 
-As variáveis principais são `BACKEND_URL`, `MONITOR_TOKEN`, `CHECK_INTERVAL_MS` e `MONITOR_TARGETS_JSON`. Consulte `monitor/.env.example`.
+O repositório inclui scripts de preparação para os componentes Node:
 
-## Testes e CI
-
-Backend:
+```powershell
+./scripts/setup.ps1
+```
 
 ```bash
-cd backend
-npm test
+./scripts/setup.sh
 ```
 
-Os testes atuais cobrem hash/verificação de senha, assinatura/verificação de sessão e persistência de heartbeat, métricas e ações.
-
-Agent e Monitor possuem scripts de build e typecheck. O Agent possui script de teste, mas não há uma suíte funcional equivalente à do Backend no momento. O Monitor não declara script de teste.
-
-No GitHub Actions, o workflow de CI executa `npm install`, `npm run typecheck` e `npm test --if-present` para os três projetos Node.
-
-## Execução em produção
-
-Uma instalação Linux pode manter os processos como serviços:
-
-```text
-systemd
-└── vps-controller-agent
-```
-
-O Backend também pode ser executado como serviço systemd conforme a configuração operacional da VPS, mas não há uma unit de Backend versionada neste repositório. Ajuste usuário, diretórios, variáveis e permissões antes de instalar.
-
-O deploy não é automático por este repositório. Para atualizar a VPS, faça revisão, backup e execução manual dos comandos adequados ao ambiente de produção.
-
-## Docker Compose
-
-`docker-compose.yml` define containers de desenvolvimento para Backend e Monitor, com volume persistente para o estado do Backend. O Agent não é iniciado por esse Compose; ele é destinado à execução na VPS.
+Também é possível executar Backend e Monitor em containers para desenvolvimento:
 
 ```bash
 docker compose up --build
 ```
 
-Não execute ações administrativas em containers de produção sem confirmar o alvo e o impacto.
+O Agent não é iniciado pelo Compose: ele é destinado à execução dentro da VPS monitorada.
+
+## Testes
+
+| Projeto | Verificações disponíveis |
+| --- | --- |
+| Backend | Build, typecheck e testes de senha, sessão, persistência, heartbeat, métricas e ações |
+| Agent | Build e typecheck; há script de teste, sem suíte funcional versionada no momento |
+| Monitor | Build e typecheck |
+| Mobile | Análise e testes Flutter |
+
+Comandos principais:
+
+```bash
+# Backend
+cd backend && npm test
+
+# Agent
+cd agent && npm run typecheck && npm run build
+
+# Monitor
+cd monitor && npm run typecheck && npm run build
+
+# Mobile
+cd mobile && flutter analyze && flutter test
+```
+
+## CI
+
+O workflow [CI](.github/workflows/ci.yml) roda em todo `push` e `pull_request` para `backend`, `agent` e `monitor`:
+
+```text
+checkout → Node.js 22 → npm install → typecheck → testes quando disponíveis
+```
+
+O repositório não possui workflow de deploy automático via SSH. A atualização de produção deve ser realizada com revisão, backup e procedimentos adequados ao ambiente.
+
+## Estrutura do repositório
+
+```text
+VPS-Controller/
+├── .github/workflows/      # Integração contínua
+├── agent/                  # Processo residente na VPS
+├── backend/                # API, auth, alertas e estado
+├── docker/                 # Unit e arquivos de apoio
+├── docs/                   # Arquitetura, segurança e setup
+├── mobile/                 # Aplicativo Flutter
+├── monitor/                # Monitor HTTP externo
+├── scripts/                # Automação de setup local
+├── docker-compose.yml      # Backend e Monitor para desenvolvimento
+└── README.md
+```
 
 ## Screenshots
 
@@ -326,34 +317,29 @@ Não execute ações administrativas em containers de produção sem confirmar o
 
 <!-- Adicionar screenshot dos Alertas aqui -->
 
-<!-- Adicionar screenshot do GitHub Actions aqui -->
+## Decisões técnicas
 
-## Desafios técnicos
-
-- Separar autenticação humana da autenticação interna do Agent e Monitor.
-- Persistir estado de monitoramento sem introduzir dependências de runtime desnecessárias.
-- Coletar métricas Linux e tratar indisponibilidade de Docker/systemd.
-- Restringir ações administrativas a operações e serviços autorizados.
-- Manter o fluxo de ações assíncrono entre aplicativo, Backend e Agent.
-- Detectar offline, gerar alertas e aplicar cooldown para evitar duplicação contínua.
-- Manter a interface funcional quando a API ou a VPS estiverem indisponíveis.
+- Separação explícita entre sessão humana, Agent e Monitor.
+- Sem dependências de runtime nos componentes Node para o núcleo de monitoramento.
+- Fila de ações entre Backend e Agent, em vez de execução direta pelo aplicativo.
+- Allowlists para limitar operações administrativas.
+- Persistência simples de estado para o estágio atual do projeto.
+- Interface mobile preparada para operar mesmo quando a API estiver indisponível.
 
 ## Roadmap
 
-Itens abaixo são possibilidades futuras e não fazem parte da implementação atual:
+Itens planejados, ainda não implementados:
 
-- rollback automático de deploy;
-- cobertura funcional mais ampla;
-- histórico avançado de métricas;
+- histórico avançado e gráficos de métricas;
 - suporte completo a múltiplos servidores no aplicativo;
 - notificações push;
 - RBAC e autenticação multifator;
-- observabilidade e logs centralizados;
-- releases versionadas.
+- logs centralizados e observabilidade;
+- rollback automático e releases versionadas.
 
 ## Status
 
-Projeto em desenvolvimento ativo. O núcleo Node, o fluxo Agent/Backend, o aplicativo Flutter e a integração controlada com Docker/systemd continuam sujeitos a validação no ambiente Linux de produção.
+Em desenvolvimento ativo. O projeto possui CI para os componentes Node e deve ser validado no ambiente Linux antes de qualquer instalação de produção.
 
 ## Autor
 
