@@ -35,14 +35,13 @@ class _VpsControllerAppState extends State<VpsControllerApp> {
       if (mounted) setState(() => _state = _SessionState.signedOut);
       return;
     }
-    await _authenticate(token, persist: false);
+    await _authenticate(token);
   }
 
-  Future<void> _authenticate(String token, {required bool persist}) async {
+  Future<void> _authenticate(String token) async {
     final api = ApiService(token: token);
     try {
       await api.listServers();
-      if (persist) await _storage.writeToken(token);
       _api?.dispose();
       _live?.dispose();
       final live = LiveService(token: token)..connect();
@@ -68,16 +67,27 @@ class _VpsControllerAppState extends State<VpsControllerApp> {
     }
   }
 
-  Future<void> _login(String token) async {
-    if (token.trim().isEmpty) {
-      setState(() => _message = 'Informe o token de acesso.');
+  Future<void> _login(String username, String password) async {
+    if (username.trim().isEmpty || password.isEmpty) {
+      setState(() => _message = 'Informe usuário e senha.');
       return;
     }
     setState(() {
       _state = _SessionState.loading;
       _message = null;
     });
-    await _authenticate(token.trim(), persist: true);
+    try {
+      final session =
+          await ApiService.login(username: username.trim(), password: password);
+      await _storage.writeToken(session.token);
+      await _authenticate(session.token);
+    } on ApiException catch (error) {
+      if (mounted)
+        setState(() {
+          _message = error.message;
+          _state = _SessionState.signedOut;
+        });
+    }
   }
 
   Future<void> _logout() async {

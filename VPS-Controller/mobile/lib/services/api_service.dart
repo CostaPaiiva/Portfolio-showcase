@@ -13,6 +13,12 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+class AuthSession {
+  const AuthSession({required this.token, required this.expiresIn});
+  final String token;
+  final int expiresIn;
+}
+
 class ApiService {
   ApiService({required this.token}) {
     _client.connectionTimeout = const Duration(seconds: 8);
@@ -22,6 +28,59 @@ class ApiService {
   final String token;
   final HttpClient _client = HttpClient();
   bool _closed = false;
+
+  static Future<AuthSession> login(
+      {required String username, required String password}) async {
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 8)
+      ..idleTimeout = const Duration(seconds: 15);
+    try {
+      final request =
+          await client.postUrl(Uri.parse('${AppConfig.apiBaseUrl}/auth/login'));
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode({'username': username, 'password': password}));
+      final response =
+          await request.close().timeout(const Duration(seconds: 15));
+      final text = await utf8.decoder
+          .bind(response)
+          .join()
+          .timeout(const Duration(seconds: 15));
+      Map<String, dynamic> data = {};
+      if (text.isNotEmpty) {
+        try {
+          data = Map<String, dynamic>.from(jsonDecode(text) as Map);
+        } on FormatException {
+          throw const ApiException('Resposta inválida do servidor.');
+        }
+      }
+      if (response.statusCode == 401)
+        throw const ApiException('Usuário ou senha incorretos.',
+            statusCode: 401);
+      if (response.statusCode == 503)
+        throw const ApiException(
+            'Autenticação ainda não foi configurada no servidor.',
+            statusCode: 503);
+      if (response.statusCode < 200 || response.statusCode >= 300)
+        throw ApiException('Não foi possível entrar.',
+            statusCode: response.statusCode);
+      final token = data['token'];
+      if (token is! String || token.isEmpty)
+        throw const ApiException('Resposta de autenticação inválida.');
+      return AuthSession(
+          token: token, expiresIn: (data['expiresIn'] as num?)?.toInt() ?? 0);
+    } on ApiException {
+      rethrow;
+    } on SocketException {
+      throw const ApiException(
+          'Não foi possível conectar à VPS. Verifique o Tailscale.');
+    } on TimeoutException {
+      throw const ApiException('A VPS demorou demais para responder.');
+    } on HttpException {
+      throw const ApiException('Erro de comunicação com a VPS.');
+    } finally {
+      client.close(force: true);
+    }
+  }
 
   Uri _url(String path) => Uri.parse('${AppConfig.apiBaseUrl}$path');
 

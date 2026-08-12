@@ -181,7 +181,7 @@ const userManualSections = <ManualSection>[
     title: 'Segurança',
     icon: Icons.shield_outlined,
     paragraphs: [
-      'O token de acesso é confidencial. Não o compartilhe, não o coloque em prints ou mensagens e nunca publique tokens, credenciais ou arquivos .env no GitHub.',
+      'A senha e o token de sessão são confidenciais. Não compartilhe credenciais, não coloque senhas em prints ou mensagens e nunca publique tokens, credenciais ou arquivos .env no GitHub.',
       'Start, Stop e Restart são ações administrativas. O sistema usa validações e allowlists; não existe shell arbitrário no aplicativo.',
     ],
     warning:
@@ -191,7 +191,7 @@ const userManualSections = <ManualSection>[
     title: 'Login e problemas de conexão',
     icon: Icons.login_outlined,
     paragraphs: [
-      'Na primeira utilização, informe o USER_TOKEN quando solicitado. O aplicativo atual armazena o token no armazenamento seguro do dispositivo e valida a sessão ao abrir. No Logout, o token salvo é removido.',
+      'Na primeira utilização, informe seu usuário e senha. O aplicativo envia essas credenciais ao Backend, guarda somente o token de sessão no armazenamento seguro do dispositivo e valida a sessão ao abrir. No Logout, o token salvo é removido.',
       'Se não conseguir conectar: verifique a Internet, abra o Tailscale, confirme que ele está conectado, volte ao VPS Controller e toque em Atualizar ou tente novamente.',
     ],
   ),

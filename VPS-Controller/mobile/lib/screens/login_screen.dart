@@ -4,7 +4,7 @@ import '../widgets/app_surface.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.onLogin, this.message});
-  final Future<void> Function(String token) onLogin;
+  final Future<void> Function(String username, String password) onLogin;
   final String? message;
 
   @override
@@ -12,13 +12,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _controller = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _loading = false;
+  bool _obscurePassword = true;
   String? _error;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -29,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
-      await widget.onLogin(_controller.text);
+      await widget.onLogin(_usernameController.text, _passwordController.text);
     } catch (_) {
       if (mounted) setState(() => _error = 'Não foi possível conectar à VPS.');
     } finally {
@@ -72,14 +75,35 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ?.copyWith(color: AppColors.muted)),
                         const SizedBox(height: 28),
                         TextField(
-                          controller: _controller,
-                          obscureText: true,
+                          controller: _usernameController,
+                          obscureText: false,
                           enabled: !_loading,
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) => _submit(),
                           decoration: const InputDecoration(
-                              labelText: 'Token de acesso',
-                              prefixIcon: Icon(Icons.key_outlined)),
+                              labelText: 'Usuário',
+                              prefixIcon: Icon(Icons.person_outline)),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          enabled: !_loading,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _submit(),
+                          decoration: InputDecoration(
+                              labelText: 'Senha',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                tooltip: _obscurePassword
+                                    ? 'Mostrar senha'
+                                    : 'Ocultar senha',
+                                icon: Icon(_obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined),
+                                onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword),
+                              )),
                         ),
                         if (widget.message != null || _error != null) ...[
                           const SizedBox(height: 12),

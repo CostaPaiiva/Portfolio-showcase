@@ -4,6 +4,7 @@ import { URL } from 'node:url';
 import type { Duplex } from 'node:stream';
 import { config } from './config.js';
 import { Store } from './store.js';
+import { createSessionToken, verifyPassword, verifySessionToken } from './auth.js';
 import type { ActionType, ContainerSnapshot, MetricSnapshot } from './types.js';
 
 const store = new Store(config.dataFile);
@@ -36,9 +37,10 @@ async function body(req: IncomingMessage): Promise<Record<string, unknown>> {
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
 }
 
-function bearer(req: IncomingMessage): string { return (req.headers.authorization || '').replace(/^Bearer\s+/i, ''); }
+function bearer(req: IncomingMessage): string { return (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim(); }
 function agent(req: IncomingMessage): boolean { return req.headers['x-agent-token'] === config.agentToken; }
 function monitor(req: IncomingMessage): boolean { return req.headers['x-monitor-token'] === config.monitorToken; }
+function user(req: IncomingMessage): boolean { return verifySessionToken(bearer(req), config.jwtSecret); }
 function validTarget(value: unknown): value is string { return typeof value === 'string' && value.length > 0 && value.length <= 255 && /^[a-zA-Z0-9_.:@/-]+$/.test(value); }
 
 function frame(value: string): Buffer {
@@ -86,9 +88,18 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     const path = url.pathname;
     if (req.method === 'GET' && path === '/health') return json(res, 200, { status: 'ok', version: '0.2.0', timestamp: new Date().toISOString() });
+    if (req.method === 'POST' && path === '/auth/login') {
+      const input = await body(req);
+      const username = typeof input.username === 'string' ? input.username.trim() : '';
+      const password = typeof input.password === 'string' ? input.password : '';
+      const configured = Boolean(config.adminUsername && config.adminPasswordHash && config.jwtSecret);
+      if (!configured) return json(res, 503, { error: 'authentication_not_configured' });
+      if (username !== config.adminUsername || !verifyPassword(password, config.adminPasswordHash)) return json(res, 401, { error: 'invalid_credentials' });
+      return json(res, 200, { token: createSessionToken(username, config.jwtSecret, config.sessionTtlSeconds), expiresIn: config.sessionTtlSeconds });
+    }
     if (path.startsWith('/api/agent/') && !agent(req)) return json(res, 401, { error: 'invalid_agent_token' });
     if (path.startsWith('/api/monitor/') && !monitor(req)) return json(res, 401, { error: 'invalid_monitor_token' });
-    if (path.startsWith('/api/') && !path.startsWith('/api/agent/') && !path.startsWith('/api/monitor/') && bearer(req) !== config.userToken) return json(res, 401, { error: 'unauthorized' });
+    if (path.startsWith('/api/') && !path.startsWith('/api/agent/') && !path.startsWith('/api/monitor/') && !user(req)) return json(res, 401, { error: 'unauthorized' });
 
     if (req.method === 'POST' && path === '/api/agent/heartbeat') {
       const input = await body(req) as any;
@@ -158,7 +169,7 @@ const server = http.createServer(async (req, res) => {
 server.on('upgrade', (req, socket) => {
   try {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-    if (url.pathname !== '/ws' || url.searchParams.get('token') !== config.userToken) { socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); socket.destroy(); return; }
+    if (url.pathname !== '/ws' || !verifySessionToken(url.searchParams.get('token') || '', config.jwtSecret)) { socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); socket.destroy(); return; }
     const key = req.headers['sec-websocket-key'];
     if (typeof key !== 'string') { socket.destroy(); return; }
     const accept = createHash('sha1').update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest('base64');
