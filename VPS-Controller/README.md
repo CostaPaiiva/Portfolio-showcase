@@ -45,7 +45,7 @@ Em vez de expor um terminal remoto, o projeto usa uma arquitetura com responsabi
 ```mermaid
 flowchart LR
     U[Usuário] --> M[Flutter Mobile App]
-    M -->|REST + WebSocket| B[Backend Node.js / TypeScript]
+    M -->|Tailscale: REST + WebSocket| B[Backend Node.js / TypeScript]
     B -->|Estado, sessões, alertas e fila| S[(Estado JSON)]
     A[Agent Node.js na VPS] -->|Heartbeat, métricas e containers| B
     B -->|Ações pendentes| A
@@ -84,6 +84,34 @@ Agent na VPS
 ```
 
 O aplicativo não acessa Docker ou systemd diretamente. As operações passam pelo Backend, entram na fila e são executadas pelo Agent na VPS.
+
+## Rede privada com Tailscale
+
+Na implantação privada recomendada, o Tailscale é usado para criar a rede segura entre o celular e a VPS. É por essa rede que o aplicativo consegue alcançar as URLs configuradas em `API_BASE_URL` e `WS_URL`.
+
+```text
+Celular com Tailscale conectado
+        ↓ rede privada
+VPS com Tailscale conectado
+        ↓
+Backend do VPS Controller
+```
+
+Isso evita a necessidade de publicar o painel administrativo diretamente na internet. Para usar o aplicativo nessa arquitetura, o Tailscale precisa estar conectado no celular e na VPS, e ambos devem pertencer à mesma rede privada (tailnet) ou ter acesso autorizado entre si.
+
+O Flutter não depende tecnicamente do Tailscale: ele usa as URLs definidas na instalação. Portanto, em desenvolvimento local é possível usar um emulador e um endereço local; já em produção privada, o Tailscale é a forma recomendada de fornecer conectividade protegida.
+
+### Quando o aplicativo não conecta
+
+Antes de investigar o Backend, confirme:
+
+1. O celular tem acesso à internet.
+2. O Tailscale está conectado no celular.
+3. O Tailscale está ativo na VPS.
+4. As URLs `API_BASE_URL` e `WS_URL` apontam para o endereço privado correto da VPS.
+5. O Backend está em execução e responde ao endpoint `/health`.
+
+O aplicativo não configura nem inicia o Tailscale; ele apenas usa a conectividade privada já estabelecida.
 
 ## Segurança
 
@@ -138,11 +166,13 @@ flutter analyze
 flutter test
 
 flutter run \
-  --dart-define=API_BASE_URL=http://SEU_SERVIDOR:PORTA \
-  --dart-define=WS_URL=ws://SEU_SERVIDOR:PORTA/ws
+  --dart-define=API_BASE_URL=http://ENDERECO_PRIVADO_DA_VPS:PORTA \
+  --dart-define=WS_URL=ws://ENDERECO_PRIVADO_DA_VPS:PORTA/ws
 ```
 
 Não inclua usuário, senha ou token de sessão em `dart-define` ou no código-fonte.
+
+Em produção privada, substitua `ENDERECO_PRIVADO_DA_VPS` pelo endereço acessível via Tailscale. Não publique esse endereço em repositórios ou capturas de tela.
 
 ## Backend
 
