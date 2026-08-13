@@ -327,7 +327,8 @@ VPS-Controller/
 ├── agent/                  # Processo residente na VPS
 ├── backend/                # API, auth, alertas e estado
 ├── docker/                 # Unit e arquivos de apoio
-├── docs/                   # Arquitetura, segurança e setup
+├── docs/                   # Arquitetura, segurança, setup e screenshots
+│   └── screenshots/        # Capturas da interface mobile
 ├── mobile/                 # Aplicativo Flutter
 ├── monitor/                # Monitor HTTP externo
 ├── scripts/                # Automação de setup local
@@ -337,15 +338,20 @@ VPS-Controller/
 
 ## Screenshots
 
-<!-- Adicionar screenshot do Login aqui -->
+As capturas abaixo registram a interface atual do aplicativo durante a validação visual do projeto. Elas foram incluídas sem edição e não exibem credenciais, tokens, hashes ou endereços privados da infraestrutura.
 
-<!-- Adicionar screenshot do Dashboard aqui -->
+<p align="center">
+  <img src="docs/screenshots/login.jpg" alt="Tela de login do VPS Controller" width="235" />
+  <img src="docs/screenshots/dashboard.png" alt="Dashboard de monitoramento da VPS" width="235" />
+  <img src="docs/screenshots/docker.png" alt="Tela de gerenciamento de containers Docker" width="235" />
+  <img src="docs/screenshots/settings.png" alt="Tela de ajustes e segurança" width="235" />
+</p>
 
-<!-- Adicionar screenshot do Docker aqui -->
+<p align="center">
+  <sub>Login seguro · Visão operacional · Containers Docker · Ajustes e sessão</sub>
+</p>
 
-<!-- Adicionar screenshot do Sistema aqui -->
-
-<!-- Adicionar screenshot dos Alertas aqui -->
+As telas reforçam a separação entre monitoramento, ações administrativas controladas e configuração local da sessão.
 
 ## Decisões técnicas
 
