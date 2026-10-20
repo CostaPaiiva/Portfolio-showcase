@@ -40,8 +40,8 @@ services:
   # SERVIÇO: OBJECT STORAGE S3-COMPATIBLE (MINIO - Data Lake Raw/Bronze/Silver)
   # ============================================================================
   minio:
-    # Imagem oficial hospedada no registro Quay.io (removida do Docker Hub)
-    image: quay.io/minio/minio:latest
+    # Imagem aberta e mantida publicamente pela Chainguard (substitui imagens descontinuadas/privatizadas)
+    image: cgr.dev/chainguard/minio:latest
     container_name: agro-minio
     restart: unless-stopped
     # Comando de inicialização do MinIO e porta do console web (:9001)
@@ -50,7 +50,6 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     # Exposição de portas: 9000 (API S3) e 9001 (Console Web / UI)
-    # Exposto no IP de rede/VPN ou altere para 127.0.0.1 se for testar localmente
     ports:
       - "100.105.65.75:9000:9000"
       - "100.105.65.75:9001:9001"
@@ -58,12 +57,6 @@ services:
       # Volume nomeado onde os buckets e arquivos (objetos) serão armazenados
       - minio_data:/data
     mem_limit: 1g
-    # Checagem de integridade do MinIO utilizando o cliente mc interno
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
     networks:
       - agro-net
 
