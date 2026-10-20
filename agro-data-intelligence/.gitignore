@@ -1,0 +1,18 @@
+# Segredos e variáveis de ambiente
+.env
+
+# Logs
+*.log
+
+# Dados locais e temporários
+data/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ambientes virtuais
+.venv/
+venv/
+ENV/

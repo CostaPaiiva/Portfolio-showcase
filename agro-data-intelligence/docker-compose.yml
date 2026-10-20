@@ -1,0 +1,82 @@
+# Versão do Docker Compose e definição de serviços
+services:
+  # ============================================================================
+  # SERVIÇO: BANCO DE DADOS POSTGRESQL (DW / Metadados)
+  # ============================================================================
+  postgres:
+    # Imagem oficial leve baseada em Alpine Linux
+    image: postgres:16-alpine
+    container_name: agro-postgres
+    # Reinicia automaticamente o container a menos que tenha sido parado manualmente
+    restart: unless-stopped
+    # Variáveis de ambiente lidas a partir do arquivo .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Mapeamento de portas (Host:Container). 
+    # Vinculado em 127.0.0.1 para evitar exposição direta à internet
+    ports:
+      - "127.0.0.1:15432:5432"
+    # Persistência de dados e script de inicialização
+    volumes:
+      # Volume nomeado para persistir dados do PostgreSQL entre recriações de containers
+      - postgres_data:/var/lib/postgresql/data
+      # Script SQL montado como somente leitura (:ro) executado apenas na primeira criação do banco
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # Limite máximo de memória RAM que o container pode consumir
+    mem_limit: 2g
+    # Checagem de integridade (Healthcheck) para verificar se o banco aceita conexões
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Rede isolada para comunicação entre containers
+    networks:
+      - agro-net
+
+  # ============================================================================
+  # SERVIÇO: OBJECT STORAGE S3-COMPATIBLE (MINIO - Data Lake Raw/Bronze/Silver)
+  # ============================================================================
+  minio:
+    # Imagem oficial do MinIO
+    image: minio/minio:latest
+    container_name: agro-minio
+    restart: unless-stopped
+    # Comando de inicialização do MinIO e porta do console web (:9001)
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    # Exposição de portas: 9000 (API S3) e 9001 (Console Web / UI)
+    # Exposto no IP de rede/VPN ou altere para 127.0.0.1 se for testar localmente
+    ports:
+      - "100.105.65.75:9000:9000"
+      - "100.105.65.75:9001:9001"
+    volumes:
+      # Volume nomeado onde os buckets e arquivos (objetos) serão armazenados
+      - minio_data:/data
+    mem_limit: 1g
+    # Checagem de integridade do MinIO utilizando o cliente mc interno
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - agro-net
+
+# ==============================================================================
+# DEFINIÇÃO DE VOLUMES PERSISTENTES
+# ==============================================================================
+volumes:
+  postgres_data:  # Armazena os arquivos físicos do Postgres no host gerenciado pelo Docker
+  minio_data:     # Armazena os buckets e arquivos enviados para o MinIO
+
+# ==============================================================================
+# REDE ISOLADA (BRIDGE)
+# ==============================================================================
+networks:
+  agro-net:
+    driver: bridge # Permite comunicação direta entre containers usando o nome do serviço como host
