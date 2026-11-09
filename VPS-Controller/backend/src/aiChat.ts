@@ -3,14 +3,25 @@ import { config } from './config.js';
 import type { Store } from './store.js';
 import type { ActionType } from './types.js';
 
-let aiClient: GoogleGenAI | null = null;
+let currentKeyIndex = 0;
 
-function getAIClient() {
-  if (!config.geminiApiKey) return null;
-  if (!aiClient) {
-    aiClient = new GoogleGenAI({ apiKey: config.geminiApiKey });
+function getAIClient(keyOverride?: string) {
+  const keys = config.geminiApiKeys.length > 0 ? config.geminiApiKeys : (config.geminiApiKey ? [config.geminiApiKey] : []);
+  if (keys.length === 0) return null;
+  const apiKey = keyOverride || keys[currentKeyIndex % keys.length];
+  return {
+    client: new GoogleGenAI({ apiKey }),
+    keyIndex: keyOverride ? -1 : (currentKeyIndex % keys.length),
+    totalKeys: keys.length,
+  };
+}
+
+function rotateKey() {
+  const keys = config.geminiApiKeys.length > 0 ? config.geminiApiKeys : (config.geminiApiKey ? [config.geminiApiKey] : []);
+  if (keys.length > 1) {
+    currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+    console.warn(`[aiChat] Cota/Rate limit excedido (429). Alternando automaticamente para Gemini API Key #${currentKeyIndex + 1} de ${keys.length}`);
   }
-  return aiClient;
 }
 
 const toolsDeclarations: FunctionDeclaration[] = [
@@ -209,9 +220,9 @@ export async function processAIChat(
   store: Store,
   onActionCreated?: (action: any) => void
 ): Promise<string> {
-  const client = getAIClient();
-  if (!client) {
-    return 'Chave de API do Gemini não configurada no backend (GEMINI_API_KEY).';
+  const keys = config.geminiApiKeys.length > 0 ? config.geminiApiKeys : (config.geminiApiKey ? [config.geminiApiKey] : []);
+  if (keys.length === 0) {
+    return 'Nenhuma chave GEMINI_API_KEY configurada no backend.';
   }
 
   const systemInstruction = `Você é o Copiloto SysAdmin inteligente do VPS Controller (estilo Antigravity / Claude Code / DevOps Autônomo).
@@ -234,175 +245,195 @@ Comportamento esperado:
     parts: [{ text: msg.content }],
   }));
 
-  try {
-    const response = await client.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents,
-      config: {
-        systemInstruction,
-        tools: [{ functionDeclarations: toolsDeclarations }],
-      },
-    });
+  let lastError: any = null;
 
-    const candidate = response.candidates?.[0];
-    const functionCalls = candidate?.content?.parts?.filter(p => p.functionCall).map(p => p.functionCall);
+  // Tenta com a chave atual; se der 429 ou quota esgotada, faz fallback imediato para a próxima chave
+  for (let attempt = 0; attempt < keys.length; attempt++) {
+    const aiInstance = getAIClient();
+    if (!aiInstance) break;
+    const client = aiInstance.client;
 
-    if (!functionCalls || functionCalls.length === 0) {
-      return response.text || 'Entendido.';
-    }
-
-    const functionResponses: any[] = [];
-    for (const call of functionCalls) {
-      if (!call) continue;
-      const { name, args } = call;
-      let result: any = { error: 'unknown_tool' };
-
-      if (name === 'list_servers') {
-        result = store.listServers();
-      } else if (name === 'get_server_details') {
-        const sid = String(args?.serverId || '');
-        result = store.getServer(sid) || { error: 'servidor_nao_encontrado' };
-      } else if (name === 'list_containers') {
-        const sid = String(args?.serverId || '');
-        const server = store.getServer(sid);
-        result = server?.containers || [];
-      } else if (name === 'get_active_alerts') {
-        result = store.alerts();
-      } else if (name === 'execute_docker_action' || name === 'execute_service_action') {
-        const sid = String(args?.serverId || '');
-        const act = String(args?.action || '') as ActionType;
-        const target = String(args?.containerName || args?.serviceName || '');
-        const actionRecord = await store.addAction(sid, act, target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Ação ${act} para '${target}' enviada com sucesso para a fila da VPS ${sid}.`,
-          action: actionRecord,
-        };
-      } else if (name === 'create_folder') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({ path: String(args?.folderPath || '') });
-        const actionRecord = await store.addAction(sid, 'file.create_folder', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Comando para criar diretório '${args?.folderPath}' enviado para a VPS.`,
-          action: actionRecord,
-        };
-      } else if (name === 'delete_folder') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({ path: String(args?.folderPath || '') });
-        const actionRecord = await store.addAction(sid, 'file.delete_folder', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Comando para excluir diretório '${args?.folderPath}' enviado para a VPS.`,
-          action: actionRecord,
-        };
-      } else if (name === 'write_file') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({ path: String(args?.filePath || ''), content: String(args?.content || '') });
-        const actionRecord = await store.addAction(sid, 'file.write_file', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Comando para salvar arquivo '${args?.filePath}' enviado para a VPS.`,
-          action: actionRecord,
-        };
-      } else if (name === 'delete_file') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({ path: String(args?.filePath || '') });
-        const actionRecord = await store.addAction(sid, 'file.delete_file', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Comando para excluir arquivo '${args?.filePath}' enviado para a VPS.`,
-          action: actionRecord,
-        };
-      } else if (name === 'read_file') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({ path: String(args?.filePath || '') });
-        const actionRecord = await store.addAction(sid, 'file.read_file', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Solicitação para ler arquivo '${args?.filePath}' enviada para a VPS.`,
-          action: actionRecord,
-        };
-      } else if (name === 'list_directory') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({ path: String(args?.directoryPath || '') });
-        const actionRecord = await store.addAction(sid, 'file.list_directory', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Solicitação para listar diretório '${args?.directoryPath}' enviada para a VPS.`,
-          action: actionRecord,
-        };
-      } else if (name === 'get_docker_logs') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({
-          containerName: String(args?.containerName || ''),
-          lines: Number(args?.lines || 100),
-        });
-        const actionRecord = await store.addAction(sid, 'docker.logs', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Solicitação de logs do container '${args?.containerName}' enviada para a VPS.`,
-          action: actionRecord,
-        };
-      } else if (name === 'get_service_logs') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({
-          serviceName: String(args?.serviceName || ''),
-          lines: Number(args?.lines || 100),
-        });
-        const actionRecord = await store.addAction(sid, 'service.logs', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Solicitação de logs journalctl do serviço '${args?.serviceName}' enviada para a VPS.`,
-          action: actionRecord,
-        };
-      } else if (name === 'execute_shell_command') {
-        const sid = String(args?.serverId || '');
-        const target = JSON.stringify({ command: String(args?.command || '') });
-        const actionRecord = await store.addAction(sid, 'shell.execute', target);
-        if (onActionCreated) onActionCreated(actionRecord);
-        result = {
-          success: true,
-          message: `Comando bash '${args?.command}' enviado para execução no terminal da VPS.`,
-          action: actionRecord,
-        };
-      }
-
-      functionResponses.push({
-        functionResponse: {
-          name,
-          response: { output: result },
+    try {
+      const response = await client.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents,
+        config: {
+          systemInstruction,
+          tools: [{ functionDeclarations: toolsDeclarations }],
         },
       });
-    }
 
-    const secondResponse = await client.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        ...contents,
-        candidate?.content!,
-        {
-          role: 'user',
-          parts: functionResponses,
+      const candidate = response.candidates?.[0];
+      const functionCalls = candidate?.content?.parts?.filter(p => p.functionCall).map(p => p.functionCall);
+
+      if (!functionCalls || functionCalls.length === 0) {
+        return response.text || 'Entendido.';
+      }
+
+      const functionResponses: any[] = [];
+      for (const call of functionCalls) {
+        if (!call) continue;
+        const { name, args } = call;
+        let result: any = { error: 'unknown_tool' };
+
+        if (name === 'list_servers') {
+          result = store.listServers();
+        } else if (name === 'get_server_details') {
+          const sid = String(args?.serverId || '');
+          result = store.getServer(sid) || { error: 'servidor_nao_encontrado' };
+        } else if (name === 'list_containers') {
+          const sid = String(args?.serverId || '');
+          const server = store.getServer(sid);
+          result = server?.containers || [];
+        } else if (name === 'get_active_alerts') {
+          result = store.alerts();
+        } else if (name === 'execute_docker_action' || name === 'execute_service_action') {
+          const sid = String(args?.serverId || '');
+          const act = String(args?.action || '') as ActionType;
+          const target = String(args?.containerName || args?.serviceName || '');
+          const actionRecord = await store.addAction(sid, act, target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Ação ${act} para '${target}' enviada com sucesso para a fila da VPS ${sid}.`,
+            action: actionRecord,
+          };
+        } else if (name === 'create_folder') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({ path: String(args?.folderPath || '') });
+          const actionRecord = await store.addAction(sid, 'file.create_folder', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Comando para criar diretório '${args?.folderPath}' enviado para a VPS.`,
+            action: actionRecord,
+          };
+        } else if (name === 'delete_folder') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({ path: String(args?.folderPath || '') });
+          const actionRecord = await store.addAction(sid, 'file.delete_folder', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Comando para excluir diretório '${args?.folderPath}' enviado para a VPS.`,
+            action: actionRecord,
+          };
+        } else if (name === 'write_file') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({ path: String(args?.filePath || ''), content: String(args?.content || '') });
+          const actionRecord = await store.addAction(sid, 'file.write_file', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Comando para salvar arquivo '${args?.filePath}' enviado para a VPS.`,
+            action: actionRecord,
+          };
+        } else if (name === 'delete_file') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({ path: String(args?.filePath || '') });
+          const actionRecord = await store.addAction(sid, 'file.delete_file', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Comando para excluir arquivo '${args?.filePath}' enviado para a VPS.`,
+            action: actionRecord,
+          };
+        } else if (name === 'read_file') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({ path: String(args?.filePath || '') });
+          const actionRecord = await store.addAction(sid, 'file.read_file', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Solicitação para ler arquivo '${args?.filePath}' enviada para a VPS.`,
+            action: actionRecord,
+          };
+        } else if (name === 'list_directory') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({ path: String(args?.directoryPath || '') });
+          const actionRecord = await store.addAction(sid, 'file.list_directory', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Solicitação para listar diretório '${args?.directoryPath}' enviada para a VPS.`,
+            action: actionRecord,
+          };
+        } else if (name === 'get_docker_logs') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({
+            containerName: String(args?.containerName || ''),
+            lines: Number(args?.lines || 100),
+          });
+          const actionRecord = await store.addAction(sid, 'docker.logs', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Solicitação de logs do container '${args?.containerName}' enviada para a VPS.`,
+            action: actionRecord,
+          };
+        } else if (name === 'get_service_logs') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({
+            serviceName: String(args?.serviceName || ''),
+            lines: Number(args?.lines || 100),
+          });
+          const actionRecord = await store.addAction(sid, 'service.logs', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Solicitação de logs journalctl do serviço '${args?.serviceName}' enviada para a VPS.`,
+            action: actionRecord,
+          };
+        } else if (name === 'execute_shell_command') {
+          const sid = String(args?.serverId || '');
+          const target = JSON.stringify({ command: String(args?.command || '') });
+          const actionRecord = await store.addAction(sid, 'shell.execute', target);
+          if (onActionCreated) onActionCreated(actionRecord);
+          result = {
+            success: true,
+            message: `Comando bash '${args?.command}' enviado para execução no terminal da VPS.`,
+            action: actionRecord,
+          };
+        }
+
+        functionResponses.push({
+          functionResponse: {
+            name,
+            response: { output: result },
+          },
+        });
+      }
+
+      const secondResponse = await client.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          ...contents,
+          candidate?.content!,
+          {
+            role: 'user',
+            parts: functionResponses,
+          },
+        ],
+        config: {
+          systemInstruction,
         },
-      ],
-      config: {
-        systemInstruction,
-      },
-    });
+      });
 
-    return secondResponse.text || 'Ação processada com sucesso.';
-  } catch (err: any) {
-    console.error('Erro no processAIChat:', err);
-    return `Desculpe, ocorreu um erro ao processar sua solicitação: ${err?.message || err}`;
+      return secondResponse.text || 'Ação processada com sucesso.';
+    } catch (err: any) {
+      lastError = err;
+      const errMsg = String(err?.message || err);
+      const isQuotaError = errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota');
+      
+      console.error(`[aiChat] Erro na tentativa ${attempt + 1}/${keys.length} (Key #${aiInstance.keyIndex + 1}):`, errMsg);
+
+      if (isQuotaError && keys.length > 1) {
+        rotateKey();
+        continue;
+      }
+      break;
+    }
   }
+
+  return `Desculpe, ocorreu um erro ao processar sua solicitação: ${lastError?.message || lastError}`;
 }

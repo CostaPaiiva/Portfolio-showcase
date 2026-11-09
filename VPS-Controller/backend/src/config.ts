@@ -38,4 +38,8 @@ export const config = {
   diskThreshold: numberValue('ALERT_DISK_PERCENT', 90),
   staleSeconds: numberValue('AGENT_STALE_SECONDS', 60),
   geminiApiKey: process.env.GEMINI_API_KEY || '',
+  geminiApiKeys: (process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean),
 };
