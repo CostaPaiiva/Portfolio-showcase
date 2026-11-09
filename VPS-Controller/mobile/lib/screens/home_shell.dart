@@ -26,6 +26,7 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   final _dashboardKey = GlobalKey<DashboardScreenState>();
   final _alertsKey = GlobalKey<AlertsScreenState>();
+  final _chatKey = GlobalKey<ChatScreenState>();
   Timer? _liveRefreshTimer;
   int index = 0;
 
@@ -60,12 +61,22 @@ class _HomeShellState extends State<HomeShell> {
       0 => DashboardScreen(key: _dashboardKey, api: widget.api),
       1 => DockerScreen(api: widget.api),
       2 => SystemScreen(api: widget.api),
-      3 => ChatScreen(api: widget.api),
+      3 => ChatScreen(key: _chatKey, api: widget.api),
       4 => AlertsScreen(key: _alertsKey, api: widget.api),
       _ => SettingsScreen(onLogout: widget.onLogout),
     };
     return Scaffold(
-        appBar: AppBar(title: Text(title)),
+        appBar: AppBar(
+          title: Text(title),
+          actions: [
+            if (index == 3)
+              IconButton(
+                icon: const Icon(Icons.delete_sweep_outlined),
+                tooltip: 'Limpar conversa',
+                onPressed: () => _chatKey.currentState?.clearChat(),
+              ),
+          ],
+        ),
         body: AppSurface(child: SafeArea(top: false, child: body)),
         bottomNavigationBar: NavigationBar(
           selectedIndex: index,

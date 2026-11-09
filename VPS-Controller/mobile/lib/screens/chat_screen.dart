@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/api_service.dart';
+import '../services/chat_storage.dart';
 
 class ChatMessageItem {
   ChatMessageItem({required this.role, required this.text});
   final String role; // 'user' ou 'model'
   final String text;
+
+  Map<String, dynamic> toMap() => {'role': role, 'text': text};
+
+  factory ChatMessageItem.fromMap(Map<String, dynamic> map) => ChatMessageItem(
+        role: map['role'] as String? ?? 'user',
+        text: map['text'] as String? ?? '',
+      );
 }
 
 class ChatScreen extends StatefulWidget {
@@ -13,15 +21,18 @@ class ChatScreen extends StatefulWidget {
   final ApiService api;
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<ChatScreen> createState() => ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
-  final List<ChatMessageItem> _messages = [
+class ChatScreenState extends State<ChatScreen> {
+  static const String _defaultWelcomeText =
+      'Olá Thiago! Sou seu Copiloto SysAdmin para a VPS.\n\nAgora você pode falar comigo por texto ou por voz usando o microfone 🎙️!\n\nPosso executar diagnósticos no terminal, verificar uso de CPU/RAM, inspecionar logs de containers e serviços do sistema.';
+
+  final ChatStorage _chatStorage = ChatStorage();
+  List<ChatMessageItem> _messages = [
     ChatMessageItem(
       role: 'model',
-      text:
-          'Olá Thiago! Sou seu Copiloto SysAdmin para a VPS.\n\nAgora você pode falar comigo por texto ou por voz usando o microfone 🎙️!\n\nPosso executar diagnósticos no terminal, verificar uso de CPU/RAM, inspecionar logs de containers e serviços do sistema.',
+      text: _defaultWelcomeText,
     ),
   ];
   final TextEditingController _controller = TextEditingController();
@@ -34,7 +45,62 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _loadHistory();
     _initSpeech();
+  }
+
+  Future<void> _loadHistory() async {
+    final saved = await _chatStorage.loadMessages();
+    if (saved != null && saved.isNotEmpty && mounted) {
+      setState(() {
+        _messages = saved;
+      });
+      _scrollToBottom();
+    }
+  }
+
+  Future<void> clearChat() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Limpar conversa?'),
+        content: const Text(
+            'Todas as mensagens do Copiloto serão apagadas do dispositivo.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Limpar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      await _chatStorage.clearMessages();
+      setState(() {
+        _messages = [
+          ChatMessageItem(
+            role: 'model',
+            text: _defaultWelcomeText,
+          ),
+        ];
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Conversa do Copiloto limpa com sucesso.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _initSpeech() async {
@@ -107,6 +173,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _messages.add(ChatMessageItem(role: 'user', text: text));
       _loading = true;
     });
+    _chatStorage.saveMessages(_messages);
 
     _scrollToBottom();
 
@@ -119,6 +186,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _messages.add(ChatMessageItem(role: 'model', text: reply));
         });
+        await _chatStorage.saveMessages(_messages);
       }
     } catch (e) {
       if (mounted) {
@@ -130,6 +198,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           );
         });
+        await _chatStorage.saveMessages(_messages);
       }
     } finally {
       if (mounted) {
