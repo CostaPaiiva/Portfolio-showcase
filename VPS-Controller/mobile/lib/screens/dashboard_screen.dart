@@ -5,6 +5,8 @@ import '../models/alert.dart';
 import '../models/server.dart';
 import '../services/api_service.dart';
 import '../widgets/metric_card.dart';
+import '../widgets/sparkline_chart.dart';
+import 'audit_log_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, required this.api});
@@ -17,6 +19,8 @@ class DashboardScreen extends StatefulWidget {
 class DashboardScreenState extends State<DashboardScreen> {
   ServerInfo? server;
   List<AlertInfo> alerts = [];
+  List<double> cpuHistory = [];
+  List<double> ramHistory = [];
   String? error;
   bool loading = true;
   bool _requestActive = false;
@@ -35,13 +39,27 @@ class DashboardScreenState extends State<DashboardScreen> {
       final result = await Future.wait([
         widget.api.getServer(AppConfig.primaryServerId),
         widget.api.alerts(),
+        widget.api.getHistory(AppConfig.primaryServerId, limit: 20),
       ]);
       if (mounted) {
+        final histList = result[2] as List<Map<String, dynamic>>;
+        final cpus = histList
+            .map((item) => (item['cpuPercent'] as num?)?.toDouble() ?? 0.0)
+            .toList();
+        final rams = histList
+            .map((item) {
+              final ramMap = item['ram'] as Map?;
+              return (ramMap?['usedPercent'] as num?)?.toDouble() ?? 0.0;
+            })
+            .toList();
+
         setState(() {
           server = result[0] as ServerInfo;
           alerts = (result[1] as List<AlertInfo>)
               .where((item) => item.serverId == AppConfig.primaryServerId)
               .toList();
+          cpuHistory = cpus;
+          ramHistory = rams;
           error = null;
           loading = false;
         });
@@ -173,37 +191,62 @@ class DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: (online ? AppColors.online : AppColors.accentBright)
-                            .withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: (online ? AppColors.online : AppColors.accentBright)
-                              .withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.circle,
-                            size: 8,
-                            color: online ? AppColors.online : AppColors.accentBright,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            online ? 'ONLINE' : 'OFFLINE',
-                            style: TextStyle(
-                              color: online ? AppColors.online : AppColors.accentBright,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
+                    Row(
+                      children: [
+                        if (current.monitorLatencyMs != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            margin: const EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.07),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.network_ping_rounded, size: 12, color: AppColors.online),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${current.monitorLatencyMs} ms',
+                                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white70),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: (online ? AppColors.online : AppColors.accentBright)
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: (online ? AppColors.online : AppColors.accentBright)
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                size: 8,
+                                color: online ? AppColors.online : AppColors.accentBright,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                online ? 'ONLINE' : 'OFFLINE',
+                                style: TextStyle(
+                                  color: online ? AppColors.online : AppColors.accentBright,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -267,6 +310,40 @@ class DashboardScreenState extends State<DashboardScreen> {
               subtitle: 'Carga média: ${loadAvg.toStringAsFixed(2)}',
               icon: Icons.speed_rounded,
             ),
+            if (cpuHistory.length >= 2) ...[
+              const SizedBox(height: 6),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Histórico recente de CPU (últimos minutos)',
+                            style: TextStyle(fontSize: 11, color: Colors.white60, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '${cpuHistory.last.toStringAsFixed(1)}%',
+                            style: const TextStyle(fontSize: 11, color: AppColors.online, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SparklineChart(
+                        values: cpuHistory,
+                        lineColor: AppColors.online,
+                        minVal: 0,
+                        maxVal: 100,
+                        height: 38,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             MetricCard(
               title: 'Memória RAM',
@@ -276,6 +353,40 @@ class DashboardScreenState extends State<DashboardScreen> {
                   '${_bytes(metric.ram.usedBytes)} usados de ${_bytes(metric.ram.totalBytes)}',
               icon: Icons.memory_rounded,
             ),
+            if (ramHistory.length >= 2) ...[
+              const SizedBox(height: 6),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Histórico recente de RAM (últimos minutos)',
+                            style: TextStyle(fontSize: 11, color: Colors.white60, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '${ramHistory.last.toStringAsFixed(1)}%',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF63B3ED), fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SparklineChart(
+                        values: ramHistory,
+                        lineColor: const Color(0xFF63B3ED),
+                        minVal: 0,
+                        maxVal: 100,
+                        height: 38,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             if (primaryDisk != null) ...[
               const SizedBox(height: 10),
               MetricCard(
@@ -289,6 +400,23 @@ class DashboardScreenState extends State<DashboardScreen> {
             ],
             const SizedBox(height: 16),
             _NetworkSummary(networks: metric.networks, rate: _rate),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.history_rounded, size: 18),
+              label: const Text('Ver Log de Auditoria & Ações'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white70,
+                side: const BorderSide(color: Colors.white24),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AuditLogScreen(api: widget.api, serverId: current.id),
+                  ),
+                );
+              },
+            ),
           ],
         ],
       ),

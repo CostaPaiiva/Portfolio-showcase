@@ -176,6 +176,10 @@ const server = http.createServer(async (req, res) => {
       return json(res, 202, { action });
     }
     if (req.method === 'GET' && path === '/api/alerts') return json(res, 200, { alerts: store.alerts() });
+    if (req.method === 'GET' && path === '/api/actions') {
+      const serverId = url.searchParams.get('serverId') || undefined;
+      return json(res, 200, { actions: store.actionsList(serverId) });
+    }
     if (req.method === 'POST' && path === '/api/chat') {
       const input = await body(req) as { messages?: ChatMessage[] };
       if (!Array.isArray(input.messages) || input.messages.length === 0) {

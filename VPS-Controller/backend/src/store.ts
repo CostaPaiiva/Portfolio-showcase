@@ -20,5 +20,6 @@ export class Store{
  async finishAction(id:string,success:boolean,result:string){const a=this.state.actions[id];if(!a)return; a.status=success?'success':'failed';a.result=result.slice(0,4000);a.completedAt=new Date().toISOString();await this.save();return a;}
  async alert(serverId:string,type:string,message:string,severity:'warning'|'critical'){const a:AlertRecord={id:randomUUID(),serverId,type,message,severity,createdAt:new Date().toISOString(),status:'open'};this.state.alerts.unshift(a);this.state.alerts=this.state.alerts.slice(0,1000);await this.save();return a;}
  alerts(){return this.state.alerts;}
+ actionsList(serverId?:string){const list=Object.values(this.state.actions);const f=serverId?list.filter(x=>x.serverId===serverId):list;return f.sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()).slice(0,100);}
  async stale(ms:number){const now=Date.now(),out:ServerRecord[]=[];for(const s of Object.values(this.state.servers)){if(s.lastHeartbeatAt&&now-new Date(s.lastHeartbeatAt).getTime()>ms&&s.agentStatus!=='offline'){s.agentStatus='offline';s.updatedAt=new Date().toISOString();out.push(s);}}if(out.length)await this.save();return out;}
 }

@@ -147,6 +147,24 @@ class ApiService {
         .toList();
   }
 
+  Future<List<Map<String, dynamic>>> getHistory(String serverId, {int limit = 30}) async {
+    final data = await _request(
+        'GET', '/api/servers/${Uri.encodeComponent(serverId)}/history?limit=$limit') as Map<String, dynamic>;
+    return ((data['history'] as List?) ?? const [])
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getActions({String? serverId}) async {
+    final path = serverId != null
+        ? '/api/actions?serverId=${Uri.encodeComponent(serverId)}'
+        : '/api/actions';
+    final data = await _request('GET', path) as Map<String, dynamic>;
+    return ((data['actions'] as List?) ?? const [])
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
   Future<void> action(String serverId, String type, String target) async {
     await _request(
         'POST', '/api/servers/${Uri.encodeComponent(serverId)}/actions',

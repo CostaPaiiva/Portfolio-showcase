@@ -86,6 +86,7 @@ class ContainerInfo {
 class ServerInfo {
   final String id, agentStatus, externalStatus;
   final String? hostname, os, kernel, arch, lastHeartbeatAt;
+  final int? monitorLatencyMs;
   final ServerMetric? metric;
   final List<ContainerInfo> containers;
   const ServerInfo(
@@ -97,6 +98,7 @@ class ServerInfo {
       this.kernel,
       this.arch,
       this.lastHeartbeatAt,
+      this.monitorLatencyMs,
       this.metric,
       required this.containers});
   factory ServerInfo.fromJson(Map<String, dynamic> j) => ServerInfo(
@@ -108,6 +110,7 @@ class ServerInfo {
       kernel: j['kernel']?.toString(),
       arch: j['arch']?.toString(),
       lastHeartbeatAt: j['lastHeartbeatAt']?.toString(),
+      monitorLatencyMs: (j['monitorLatencyMs'] as num?)?.toInt(),
       metric: j['metric'] is Map
           ? ServerMetric.fromJson(Map<String, dynamic>.from(j['metric'] as Map))
           : null,

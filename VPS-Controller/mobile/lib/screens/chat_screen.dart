@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/api_service.dart';
 import '../services/chat_storage.dart';
+import '../widgets/formatted_chat_message.dart';
 
 class ChatMessageItem {
   ChatMessageItem({required this.role, required this.text});
@@ -253,7 +255,7 @@ class ChatScreenState extends State<ChatScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.8,
+                    maxWidth: MediaQuery.of(context).size.width * 0.85,
                   ),
                   decoration: BoxDecoration(
                     color: isUser
@@ -270,15 +272,57 @@ class ChatScreenState extends State<ChatScreen> {
                           : const Radius.circular(16),
                     ),
                   ),
-                  child: Text(
-                    msg.text,
-                    style: TextStyle(
-                      color: isUser
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurface,
-                      fontSize: 14.5,
-                      height: 1.35,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FormattedChatMessage(
+                        text: msg.text,
+                        isUser: isUser,
+                        textColor: isUser
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.onSurface,
+                      ),
+                      if (!isUser) ...[
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: msg.text));
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Mensagem copiada para a área de transferência! 📋'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.copy_rounded,
+                                    size: 13,
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Copiar',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               );
@@ -305,6 +349,24 @@ class ChatScreenState extends State<ChatScreen> {
               ],
             ),
           ),
+        // Chips de Comandos Rápidos
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Row(
+            children: [
+              _buildQuickPromptChip('📊 Status da VPS', 'Como está o status geral da VPS?'),
+              const SizedBox(width: 8),
+              _buildQuickPromptChip('🐳 Containers Docker', 'Liste os containers docker ativos e parados'),
+              const SizedBox(width: 8),
+              _buildQuickPromptChip('💾 Uso de Disco', 'Verifique o espaço em disco e partições'),
+              const SizedBox(width: 8),
+              _buildQuickPromptChip('⚠️ Verificar Alertas', 'Quais alertas ou problemas existem no sistema?'),
+              const SizedBox(width: 8),
+              _buildQuickPromptChip('⚡ Uso de CPU/RAM', 'Qual o consumo atual de memória RAM e CPU?'),
+            ],
+          ),
+        ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
@@ -360,6 +422,23 @@ class ChatScreenState extends State<ChatScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildQuickPromptChip(String label, String prompt) {
+    return ActionChip(
+      avatar: null,
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.15)),
+      onPressed: _loading
+          ? null
+          : () {
+              _controller.text = prompt;
+              _sendMessage();
+            },
     );
   }
 }
