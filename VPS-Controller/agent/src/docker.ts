@@ -33,6 +33,20 @@ export async function containers() {
   }
 }
 
+export async function dockerLogs(containerName: string, lines = 100): Promise<string> {
+  if (!/^[a-zA-Z0-9_.:-]+$/.test(containerName)) {
+    throw new Error('Nome de container inválido');
+  }
+  try {
+    const { stdout, stderr } = await run('docker', ['logs', '--tail', String(lines), containerName], {
+      timeout: 15_000,
+      maxBuffer: 4 * 1024 * 1024,
+    });
+    return (stdout || stderr || 'Nenhum log retornado pelo container.').trim();
+  } catch (e: any) {
+    return `Erro ao obter logs de ${containerName}: ${e.message || e}`;
+  }
+}
 export async function dockerAction(
   operation: 'start' | 'stop' | 'restart',
   target: string,

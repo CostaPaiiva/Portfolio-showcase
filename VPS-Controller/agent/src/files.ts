@@ -1,8 +1,8 @@
-import { mkdir, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile, readFile, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 
 export async function fileAction(
-  operation: 'create_folder' | 'delete_folder' | 'write_file' | 'delete_file',
+  operation: 'create_folder' | 'delete_folder' | 'write_file' | 'delete_file' | 'read_file' | 'list_directory',
   payloadStr: string
 ): Promise<string> {
   let targetPath = '';
@@ -45,6 +45,20 @@ export async function fileAction(
       if (!existsSync(cleanPath)) return `Arquivo não existe: ${cleanPath}`;
       await rm(cleanPath, { force: true });
       return `Arquivo excluído com sucesso: ${cleanPath}`;
+    }
+    case 'read_file': {
+      if (!existsSync(cleanPath)) return `Arquivo não existe: ${cleanPath}`;
+      const content = await readFile(cleanPath, 'utf8');
+      if (content.length > 50_000) {
+        return content.slice(0, 50_000) + '\n... [arquivo truncado por exceder 50k caracteres]';
+      }
+      return content;
+    }
+    case 'list_directory': {
+      if (!existsSync(cleanPath)) return `Diretório não existe: ${cleanPath}`;
+      const entries = await readdir(cleanPath, { withFileTypes: true });
+      const list = entries.map((e) => `${e.isDirectory() ? '[DIR] ' : '[FILE]'} ${e.name}`).join('\n');
+      return list || '(diretório vazio)';
     }
     default:
       throw new Error(`Operação de arquivo desconhecida: ${operation}`);

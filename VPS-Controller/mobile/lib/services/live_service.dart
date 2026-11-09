@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../core/app_config.dart';
+import 'notification_service.dart';
 
 class LiveService extends ChangeNotifier with WidgetsBindingObserver {
   LiveService({required this.token}) {
@@ -60,6 +61,16 @@ class LiveService extends ChangeNotifier with WidgetsBindingObserver {
       if (decoded is Map && decoded['event'] != 'connected') {
         _generation++;
         notifyListeners();
+
+        // Notificar alertas críticos
+        if (decoded['event'] == 'alert.created') {
+          final data = decoded['data'];
+          if (data is Map && data['severity'] == 'critical') {
+            final title = data['title']?.toString() ?? 'Alerta Crítico';
+            final message = data['message']?.toString() ?? 'Verifique o status da VPS.';
+            NotificationService().showCriticalAlert(title: title, message: message);
+          }
+        }
       }
     } catch (_) {}
   }

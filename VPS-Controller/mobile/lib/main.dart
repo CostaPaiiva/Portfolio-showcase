@@ -5,8 +5,13 @@ import 'screens/login_screen.dart';
 import 'services/api_service.dart';
 import 'services/auth_storage.dart';
 import 'services/live_service.dart';
+import 'services/notification_service.dart';
 
-void main() => runApp(const VpsControllerApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
+  runApp(const VpsControllerApp());
+}
 
 enum _SessionState { loading, signedOut, signedIn }
 

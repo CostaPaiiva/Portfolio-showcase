@@ -1,8 +1,9 @@
 import { api } from './api.js';
 import { config } from './config.js';
-import { dockerAction } from './docker.js';
+import { dockerAction, dockerLogs } from './docker.js';
 import { serviceAction } from './systemd.js';
 import { fileAction } from './files.js';
+import { executeCommand } from './terminal.js';
 
 type A = {
   id: string;
@@ -25,14 +26,32 @@ export async function actions() {
       const op = parts[1];
 
       if (family === 'docker') {
-        result = await dockerAction(op as 'start' | 'stop' | 'restart', a.target);
+        if (op === 'logs') {
+          let lines = 100;
+          let cname = a.target;
+          try {
+            const parsed = JSON.parse(a.target);
+            cname = parsed.containerName || a.target;
+            lines = parsed.lines || 100;
+          } catch {}
+          result = await dockerLogs(cname, lines);
+        } else {
+          result = await dockerAction(op as 'start' | 'stop' | 'restart', a.target);
+        }
       } else if (family === 'service') {
         result = await serviceAction(op as 'start' | 'stop' | 'restart', a.target);
       } else if (family === 'file') {
         result = await fileAction(
-          op as 'create_folder' | 'delete_folder' | 'write_file' | 'delete_file',
+          op as 'create_folder' | 'delete_folder' | 'write_file' | 'delete_file' | 'read_file' | 'list_directory',
           a.target
         );
+      } else if (family === 'shell') {
+        let cmd = a.target;
+        try {
+          const parsed = JSON.parse(a.target);
+          cmd = parsed.command || a.target;
+        } catch {}
+        result = await executeCommand(cmd);
       } else {
         throw new Error(`Tipo de ação desconhecido: ${a.type}`);
       }

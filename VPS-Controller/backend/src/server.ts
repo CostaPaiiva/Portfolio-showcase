@@ -157,6 +157,7 @@ const server = http.createServer(async (req, res) => {
         'docker.start',
         'docker.stop',
         'docker.restart',
+        'docker.logs',
         'service.start',
         'service.stop',
         'service.restart',
@@ -164,6 +165,9 @@ const server = http.createServer(async (req, res) => {
         'file.delete_folder',
         'file.write_file',
         'file.delete_file',
+        'file.read_file',
+        'file.list_directory',
+        'shell.execute',
       ];
       if (!input.type || !allowed.includes(input.type) || !validTarget(input.target)) return json(res, 400, { error: 'invalid_action' });
       const action = await store.addAction(decodeURIComponent(match[1]!), input.type, input.target);

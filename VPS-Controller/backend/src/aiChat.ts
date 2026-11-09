@@ -128,6 +128,55 @@ const toolsDeclarations: FunctionDeclaration[] = [
     },
   },
   {
+    name: 'read_file',
+    description: 'Lê o conteúdo completo de um arquivo ou documento de texto na VPS (ex: logs, .env, docker-compose.yml).',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        serverId: { type: Type.STRING, description: 'ID do servidor' },
+        filePath: { type: Type.STRING, description: 'Caminho absoluto ou relativo do arquivo a ser lido' },
+      },
+      required: ['serverId', 'filePath'],
+    },
+  },
+  {
+    name: 'list_directory',
+    description: 'Lista os arquivos e subpastas de um diretório na VPS.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        serverId: { type: Type.STRING, description: 'ID do servidor' },
+        directoryPath: { type: Type.STRING, description: 'Caminho da pasta a listar' },
+      },
+      required: ['serverId', 'directoryPath'],
+    },
+  },
+  {
+    name: 'get_docker_logs',
+    description: 'Obtém as últimas linhas de logs de um container Docker para diagnóstico.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        serverId: { type: Type.STRING, description: 'ID do servidor' },
+        containerName: { type: Type.STRING, description: 'Nome ou ID do container Docker' },
+        lines: { type: Type.INTEGER, description: 'Quantidade de linhas de log (padrão: 100)' },
+      },
+      required: ['serverId', 'containerName'],
+    },
+  },
+  {
+    name: 'execute_shell_command',
+    description: 'Executa qualquer comando no terminal Linux da VPS (estilo Antigravity / SysAdmin total) como df -h, free -m, ps aux, docker-compose up -d, curl, etc.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        serverId: { type: Type.STRING, description: 'ID do servidor' },
+        command: { type: Type.STRING, description: 'Comando bash a ser executado no terminal' },
+      },
+      required: ['serverId', 'command'],
+    },
+  },
+  {
     name: 'get_active_alerts',
     description: 'Lista todos os alertas e notificações recentes de falha, uso de memória ou CPU das VPSs.',
     parameters: {
@@ -152,15 +201,20 @@ export async function processAIChat(
     return 'Chave de API do Gemini não configurada no backend (GEMINI_API_KEY).';
   }
 
-  const systemInstruction = `Você é o Copiloto SysAdmin inteligente do VPS Controller (estilo Antigravity / Claude Code).
-Seu objetivo é ajudar o usuário Thiago Paiva a monitorar, diagnosticar e gerenciar suas VPSs Linux, containers Docker e Sistema de Arquivos.
-Você TEM AUTORIZAÇÃO TOTAL para:
-1. Criar e excluir pastas e diretórios na VPS.
-2. Criar, escrever e excluir arquivos e documentos na VPS.
-3. Consultar servidores, status de containers Docker e métricas de hardware.
-4. Executar ações operacionais (start, stop, restart) em containers e serviços.
-Seja sempre direto, técnico, proativo e amigável. Responda em Português do Brasil.
-Ao criar ou excluir arquivos/pastas, use as ferramentas correspondentes com clareza.`;
+  const systemInstruction = `Você é o Copiloto SysAdmin inteligente do VPS Controller (estilo Antigravity / Claude Code / DevOps Autônomo).
+Seu objetivo é ajudar o usuário Thiago Paiva a monitorar, diagnosticar, operar e resolver qualquer problema em suas VPSs Linux, containers Docker, serviços systemd e Sistema de Arquivos.
+Você TEM AUTORIZAÇÃO TOTAL e SUPERPODERES para:
+1. Executar comandos no terminal Linux (execute_shell_command) - diagnosticar disco, memória, processos, git, curl, docker-compose, etc.
+2. Ler e inspecionar logs de containers Docker (get_docker_logs).
+3. Ler arquivos e documentos de configuração (read_file) e listar diretórios (list_directory).
+4. Criar, editar e excluir arquivos (write_file, delete_file) e pastas (create_folder, delete_folder).
+5. Iniciar, parar ou reiniciar containers Docker e serviços systemd.
+6. Consultar servidores, status de containers, alertas e métricas de hardware em tempo real.
+
+Comportamento esperado:
+- Aja com máxima competência técnica como um engenheiro DevOps sênior.
+- Quando o usuário relatar um problema ou pedir uma ação, use proativamente suas ferramentas para investigar logs, checar processos, ler configs ou executar comandos bash necessários.
+- Seja direto, claro, seguro e responda sempre em Português do Brasil.`;
 
   const contents = messages.map(msg => ({
     role: msg.role === 'user' ? 'user' : 'model',
@@ -250,6 +304,49 @@ Ao criar ou excluir arquivos/pastas, use as ferramentas correspondentes com clar
         result = {
           success: true,
           message: `Comando para excluir arquivo '${args?.filePath}' enviado para a VPS.`,
+          action: actionRecord,
+        };
+      } else if (name === 'read_file') {
+        const sid = String(args?.serverId || '');
+        const target = JSON.stringify({ path: String(args?.filePath || '') });
+        const actionRecord = await store.addAction(sid, 'file.read_file', target);
+        if (onActionCreated) onActionCreated(actionRecord);
+        result = {
+          success: true,
+          message: `Solicitação para ler arquivo '${args?.filePath}' enviada para a VPS.`,
+          action: actionRecord,
+        };
+      } else if (name === 'list_directory') {
+        const sid = String(args?.serverId || '');
+        const target = JSON.stringify({ path: String(args?.directoryPath || '') });
+        const actionRecord = await store.addAction(sid, 'file.list_directory', target);
+        if (onActionCreated) onActionCreated(actionRecord);
+        result = {
+          success: true,
+          message: `Solicitação para listar diretório '${args?.directoryPath}' enviada para a VPS.`,
+          action: actionRecord,
+        };
+      } else if (name === 'get_docker_logs') {
+        const sid = String(args?.serverId || '');
+        const target = JSON.stringify({
+          containerName: String(args?.containerName || ''),
+          lines: Number(args?.lines || 100),
+        });
+        const actionRecord = await store.addAction(sid, 'docker.logs', target);
+        if (onActionCreated) onActionCreated(actionRecord);
+        result = {
+          success: true,
+          message: `Solicitação de logs do container '${args?.containerName}' enviada para a VPS.`,
+          action: actionRecord,
+        };
+      } else if (name === 'execute_shell_command') {
+        const sid = String(args?.serverId || '');
+        const target = JSON.stringify({ command: String(args?.command || '') });
+        const actionRecord = await store.addAction(sid, 'shell.execute', target);
+        if (onActionCreated) onActionCreated(actionRecord);
+        result = {
+          success: true,
+          message: `Comando bash '${args?.command}' enviado para execução no terminal da VPS.`,
           action: actionRecord,
         };
       }
