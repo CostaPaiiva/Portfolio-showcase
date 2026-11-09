@@ -23,6 +23,7 @@ export type ActionType =
   | 'service.start'
   | 'service.stop'
   | 'service.restart'
+  | 'service.logs'
   | 'file.create_folder'
   | 'file.delete_folder'
   | 'file.write_file'

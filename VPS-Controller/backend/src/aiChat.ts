@@ -177,6 +177,19 @@ const toolsDeclarations: FunctionDeclaration[] = [
     },
   },
   {
+    name: 'get_service_logs',
+    description: 'Obtém as últimas linhas de logs do systemd/journalctl de um serviço para diagnóstico de queda ou erro.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        serverId: { type: Type.STRING, description: 'ID do servidor' },
+        serviceName: { type: Type.STRING, description: 'Nome do serviço systemd (ex: caddy, nginx, vps-controller-backend)' },
+        lines: { type: Type.INTEGER, description: 'Quantidade de linhas de log (padrão: 100)' },
+      },
+      required: ['serverId', 'serviceName'],
+    },
+  },
+  {
     name: 'get_active_alerts',
     description: 'Lista todos os alertas e notificações recentes de falha, uso de memória ou CPU das VPSs.',
     parameters: {
@@ -337,6 +350,19 @@ Comportamento esperado:
         result = {
           success: true,
           message: `Solicitação de logs do container '${args?.containerName}' enviada para a VPS.`,
+          action: actionRecord,
+        };
+      } else if (name === 'get_service_logs') {
+        const sid = String(args?.serverId || '');
+        const target = JSON.stringify({
+          serviceName: String(args?.serviceName || ''),
+          lines: Number(args?.lines || 100),
+        });
+        const actionRecord = await store.addAction(sid, 'service.logs', target);
+        if (onActionCreated) onActionCreated(actionRecord);
+        result = {
+          success: true,
+          message: `Solicitação de logs journalctl do serviço '${args?.serviceName}' enviada para a VPS.`,
           action: actionRecord,
         };
       } else if (name === 'execute_shell_command') {

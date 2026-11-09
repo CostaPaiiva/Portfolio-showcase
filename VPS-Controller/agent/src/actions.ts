@@ -1,7 +1,7 @@
 import { api } from './api.js';
 import { config } from './config.js';
 import { dockerAction, dockerLogs } from './docker.js';
-import { serviceAction } from './systemd.js';
+import { serviceAction, serviceLogs } from './systemd.js';
 import { fileAction } from './files.js';
 import { executeCommand } from './terminal.js';
 
@@ -39,7 +39,18 @@ export async function actions() {
           result = await dockerAction(op as 'start' | 'stop' | 'restart', a.target);
         }
       } else if (family === 'service') {
-        result = await serviceAction(op as 'start' | 'stop' | 'restart', a.target);
+        if (op === 'logs') {
+          let lines = 100;
+          let sname = a.target;
+          try {
+            const parsed = JSON.parse(a.target);
+            sname = parsed.serviceName || a.target;
+            lines = parsed.lines || 100;
+          } catch {}
+          result = await serviceLogs(sname, lines);
+        } else {
+          result = await serviceAction(op as 'start' | 'stop' | 'restart', a.target);
+        }
       } else if (family === 'file') {
         result = await fileAction(
           op as 'create_folder' | 'delete_folder' | 'write_file' | 'delete_file' | 'read_file' | 'list_directory',
