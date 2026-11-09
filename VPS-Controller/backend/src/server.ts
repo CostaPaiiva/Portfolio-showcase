@@ -5,6 +5,7 @@ import type { Duplex } from 'node:stream';
 import { config } from './config.js';
 import { Store } from './store.js';
 import { createSessionToken, verifyPassword, verifySessionToken } from './auth.js';
+import { processAIChat, type ChatMessage } from './aiChat.js';
 import type { ActionType, ContainerSnapshot, MetricSnapshot } from './types.js';
 
 const store = new Store(config.dataFile);
@@ -41,7 +42,7 @@ function bearer(req: IncomingMessage): string { return (req.headers.authorizatio
 function agent(req: IncomingMessage): boolean { return req.headers['x-agent-token'] === config.agentToken; }
 function monitor(req: IncomingMessage): boolean { return req.headers['x-monitor-token'] === config.monitorToken; }
 function user(req: IncomingMessage): boolean { return verifySessionToken(bearer(req), config.jwtSecret); }
-function validTarget(value: unknown): value is string { return typeof value === 'string' && value.length > 0 && value.length <= 255 && /^[a-zA-Z0-9_.:@/-]+$/.test(value); }
+function validTarget(value: unknown): value is string { return typeof value === 'string' && value.length > 0 && value.length <= 100000; }
 
 function frame(value: string): Buffer {
   const payload = Buffer.from(value);
@@ -152,13 +153,34 @@ const server = http.createServer(async (req, res) => {
     match = path.match(/^\/api\/servers\/([^/]+)\/actions$/);
     if (req.method === 'POST' && match) {
       const input = await body(req) as { type?: ActionType; target?: unknown };
-      const allowed = ['docker.start', 'docker.stop', 'docker.restart', 'service.start', 'service.stop', 'service.restart'];
+      const allowed: ActionType[] = [
+        'docker.start',
+        'docker.stop',
+        'docker.restart',
+        'service.start',
+        'service.stop',
+        'service.restart',
+        'file.create_folder',
+        'file.delete_folder',
+        'file.write_file',
+        'file.delete_file',
+      ];
       if (!input.type || !allowed.includes(input.type) || !validTarget(input.target)) return json(res, 400, { error: 'invalid_action' });
       const action = await store.addAction(decodeURIComponent(match[1]!), input.type, input.target);
       broadcast('action.created', action);
       return json(res, 202, { action });
     }
     if (req.method === 'GET' && path === '/api/alerts') return json(res, 200, { alerts: store.alerts() });
+    if (req.method === 'POST' && path === '/api/chat') {
+      const input = await body(req) as { messages?: ChatMessage[] };
+      if (!Array.isArray(input.messages) || input.messages.length === 0) {
+        return json(res, 400, { error: 'messages_required' });
+      }
+      const reply = await processAIChat(input.messages, store, (action) => {
+        broadcast('action.created', action);
+      });
+      return json(res, 200, { reply });
+    }
     return json(res, 404, { error: 'not_found' });
   } catch (error) {
     console.error(error);

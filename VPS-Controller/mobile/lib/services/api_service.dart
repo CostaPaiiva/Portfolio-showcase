@@ -153,6 +153,12 @@ class ApiService {
         data: {'type': type, 'target': target});
   }
 
+  Future<String> sendChatMessage(List<Map<String, String>> messages) async {
+    final data = await _request('POST', '/api/chat', data: {'messages': messages})
+        as Map<String, dynamic>;
+    return (data['reply'] as String?) ?? 'Sem resposta da IA.';
+  }
+
   void dispose() {
     if (!_closed) {
       _closed = true;

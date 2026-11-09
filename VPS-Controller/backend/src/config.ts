@@ -37,4 +37,5 @@ export const config = {
   ramThreshold: numberValue('ALERT_RAM_PERCENT', 90),
   diskThreshold: numberValue('ALERT_DISK_PERCENT', 90),
   staleSeconds: numberValue('AGENT_STALE_SECONDS', 60),
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
 };

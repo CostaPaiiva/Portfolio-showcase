@@ -26,90 +26,220 @@ class _SystemScreenState extends State<SystemScreen> {
   Future<void> refresh() async {
     try {
       final value = await widget.api.getServer(AppConfig.primaryServerId);
-      if (mounted)
+      if (mounted) {
         setState(() {
           server = value;
           loading = false;
           error = null;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           error = '$e';
           loading = false;
         });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (loading) return const Center(child: CircularProgressIndicator());
-    if (error != null) return _Error(message: error!, onRetry: refresh);
+    if (error != null) return _ErrorState(message: error!, onRetry: refresh);
+
     final item = server!;
     final metric = item.metric;
+    final isOnline = item.agentStatus.toLowerCase() == 'online';
+
     return RefreshIndicator(
       onRefresh: refresh,
+      color: AppColors.accentBright,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
         children: [
-          Row(children: [
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text('SISTEMA',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.accentBright,
-                          letterSpacing: 1.8,
-                          fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 4),
-                  Text(item.hostname ?? item.id,
-                      style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 3),
-                  Text('Inventário e métricas da VPS',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: AppColors.muted)),
-                ])),
-            IconButton(
-                onPressed: refresh,
-                tooltip: 'Atualizar',
-                icon: const Icon(Icons.refresh)),
-          ]),
-          const SizedBox(height: 16),
-          _HostCard(server: item),
+          // Banner de Identificação do Servidor
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1E2228), Color(0xFF16191E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentBright.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.memory_rounded,
+                            size: 20,
+                            color: AppColors.accentBright,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'HARDWARE & KERNEL',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.4,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                            Text(
+                              item.hostname ?? item.id,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: (isOnline ? AppColors.online : AppColors.accentBright)
+                            .withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: (isOnline ? AppColors.online : AppColors.accentBright)
+                              .withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            size: 7,
+                            color: isOnline ? AppColors.online : AppColors.accentBright,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            isOnline ? 'ONLINE' : 'OFFLINE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isOnline ? AppColors.online : AppColors.accentBright,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                _SpecsGrid(server: item),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
           if (metric == null) ...[
-            const SizedBox(height: 12),
             const _EmptyMetrics(),
           ] else ...[
+            // Visão de Recursos em Cartões Elegantes
+            Row(
+              children: [
+                Expanded(
+                  child: _MiniMetricCard(
+                    title: 'CPU Instantânea',
+                    value: '${metric.cpuPercent.toStringAsFixed(1)}%',
+                    icon: Icons.speed_rounded,
+                    color: metric.cpuPercent > 85
+                        ? AppColors.accentBright
+                        : AppColors.online,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _MiniMetricCard(
+                    title: 'Memória Usada',
+                    value: '${metric.ram.usedPercent.toStringAsFixed(1)}%',
+                    icon: Icons.developer_board_rounded,
+                    color: metric.ram.usedPercent > 85
+                        ? AppColors.warning
+                        : AppColors.text,
+                  ),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 12),
-            _ResourceOverview(metric: metric, bytes: _bytes, uptime: _uptime),
-            if (metric.loadAverage.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _LoadCard(loads: metric.loadAverage),
-            ],
+
+            if (metric.loadAverage.isNotEmpty)
+              _LoadAverageCard(loads: metric.loadAverage),
+
             if (metric.disks.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Discos & Partições',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    '${metric.disks.length} partição(ões)',
+                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
-              _SectionTitle(
-                  title: 'Armazenamento',
-                  subtitle: '${metric.disks.length} volume(s) reportado(s)'),
-              const SizedBox(height: 8),
-              for (final disk in metric.disks) ...[
-                _DiskCard(disk: disk, bytes: _bytes),
-                const SizedBox(height: 10),
-              ],
+              for (final disk in metric.disks)
+                _DiskItemCard(disk: disk, bytes: _bytes),
             ],
+
             if (metric.networks.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              _SectionTitle(
-                  title: 'Interfaces de rede',
-                  subtitle: 'Tráfego instantâneo reportado pelo Agent'),
-              const SizedBox(height: 8),
-              for (final network in metric.networks) ...[
-                _NetworkCard(network: network, rate: _rate, bytes: _bytes),
-                const SizedBox(height: 10),
-              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Interfaces de Rede',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    '${metric.networks.length} interface(s)',
+                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              for (final network in metric.networks)
+                _NetworkItemCard(network: network, rate: _rate, bytes: _bytes),
             ],
           ],
         ],
@@ -120,8 +250,9 @@ class _SystemScreenState extends State<SystemScreen> {
   String _bytes(int value) {
     if (value < 1024) return '$value B';
     if (value < 1024 * 1024) return '${(value / 1024).toStringAsFixed(1)} KB';
-    if (value < 1024 * 1024 * 1024)
+    if (value < 1024 * 1024 * 1024) {
       return '${(value / 1048576).toStringAsFixed(1)} MB';
+    }
     return '${(value / 1073741824).toStringAsFixed(1)} GB';
   }
 
@@ -130,320 +261,403 @@ class _SystemScreenState extends State<SystemScreen> {
     if (value < 1024 * 1024) return '${(value / 1024).toStringAsFixed(1)} KB/s';
     return '${(value / 1048576).toStringAsFixed(1)} MB/s';
   }
-
-  String _uptime(int seconds) =>
-      '${seconds ~/ 86400}d ${(seconds % 86400) ~/ 3600}h ${(seconds % 3600) ~/ 60}m';
 }
 
-class _HostCard extends StatelessWidget {
-  const _HostCard({required this.server});
+class _SpecsGrid extends StatelessWidget {
+  const _SpecsGrid({required this.server});
   final ServerInfo server;
 
   @override
-  Widget build(BuildContext context) => Card(
-      child: Padding(
-          padding: const EdgeInsets.all(16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.computer_outlined,
-                  color: AppColors.accentBright),
-              const SizedBox(width: 8),
-              Text('Identificação do host',
-                  style: Theme.of(context).textTheme.titleMedium)
-            ]),
-            const SizedBox(height: 12),
-            _DetailRow(
-                label: 'Sistema operacional',
-                value: server.os ?? 'Não informado'),
-            _DetailRow(
-                label: 'Kernel', value: server.kernel ?? 'Não informado'),
-            _DetailRow(
-                label: 'Arquitetura', value: server.arch ?? 'Não informado'),
-            _DetailRow(label: 'ID monitorado', value: server.id),
-          ])));
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+      ),
+      child: Column(
+        children: [
+          _SpecLine(
+            label: 'Sistema Operacional',
+            value: server.os ?? 'Linux',
+            icon: Icons.computer_rounded,
+          ),
+          Divider(color: Colors.white.withValues(alpha: 0.05), height: 16),
+          _SpecLine(
+            label: 'Kernel Linux',
+            value: server.kernel ?? 'Não informado',
+            icon: Icons.terminal_rounded,
+          ),
+          Divider(color: Colors.white.withValues(alpha: 0.05), height: 16),
+          _SpecLine(
+            label: 'Arquitetura',
+            value: server.arch ?? 'x86_64',
+            icon: Icons.settings_suggest_rounded,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _ResourceOverview extends StatelessWidget {
-  const _ResourceOverview(
-      {required this.metric, required this.bytes, required this.uptime});
-  final ServerMetric metric;
-  final String Function(int) bytes;
-  final String Function(int) uptime;
+class _SpecLine extends StatelessWidget {
+  const _SpecLine({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
 
-  @override
-  Widget build(BuildContext context) => Card(
-      child: Padding(
-          padding: const EdgeInsets.all(16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.monitor_heart_outlined,
-                  color: AppColors.accentBright),
-              const SizedBox(width: 8),
-              Text('Resumo de recursos',
-                  style: Theme.of(context).textTheme.titleMedium)
-            ]),
-            const SizedBox(height: 14),
-            Row(children: [
-              Expanded(
-                  child: _ResourceValue(
-                      label: 'CPU',
-                      value: '${metric.cpuPercent.toStringAsFixed(1)}%',
-                      icon: Icons.memory_outlined)),
-              Expanded(
-                  child: _ResourceValue(
-                      label: 'RAM',
-                      value: '${metric.ram.usedPercent.toStringAsFixed(1)}%',
-                      icon: Icons.sd_storage_outlined)),
-              Expanded(
-                  child: _ResourceValue(
-                      label: 'Uptime',
-                      value: uptime(metric.uptimeSeconds),
-                      icon: Icons.schedule_outlined)),
-            ]),
-            const SizedBox(height: 14),
-            Text(
-                '${bytes(metric.ram.usedBytes)} de ${bytes(metric.ram.totalBytes)} de RAM em uso',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppColors.muted)),
-          ])));
-}
-
-class _ResourceValue extends StatelessWidget {
-  const _ResourceValue(
-      {required this.label, required this.value, required this.icon});
   final String label, value;
   final IconData icon;
+
   @override
-  Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: AppColors.muted, size: 19),
-        const SizedBox(height: 7),
-        Text(value,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.muted))
-      ]);
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.muted),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.text,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-class _LoadCard extends StatelessWidget {
-  const _LoadCard({required this.loads});
-  final List<double> loads;
+class _MiniMetricCard extends StatelessWidget {
+  const _MiniMetricCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String title, value;
+  final IconData icon;
+  final Color color;
+
   @override
-  Widget build(BuildContext context) => Card(
-      child: Padding(
-          padding: const EdgeInsets.all(16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.speed_outlined, color: AppColors.accentBright),
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: color),
               const SizedBox(width: 8),
-              Text('Carga do sistema',
-                  style: Theme.of(context).textTheme.titleMedium)
-            ]),
-            const SizedBox(height: 5),
-            Text('Média de carga fornecida pelo sistema operacional.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppColors.muted)),
-            const SizedBox(height: 13),
-            Row(children: [
-              for (var i = 0; i < loads.length && i < 3; i++)
-                Expanded(
-                    child: _ResourceValue(
-                        label: ['1 min', '5 min', '15 min'][i],
-                        value: loads[i].toStringAsFixed(2),
-                        icon: Icons.timeline_outlined))
-            ]),
-          ])));
+              Text(
+                title,
+                style: const TextStyle(fontSize: 12, color: AppColors.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _DiskCard extends StatelessWidget {
-  const _DiskCard({required this.disk, required this.bytes});
+class _LoadAverageCard extends StatelessWidget {
+  const _LoadAverageCard({required this.loads});
+  final List<double> loads;
+
+  @override
+  Widget build(BuildContext context) {
+    final l1 = loads.isNotEmpty ? loads[0].toStringAsFixed(2) : '-';
+    final l5 = loads.length > 1 ? loads[1].toStringAsFixed(2) : '-';
+    final l15 = loads.length > 2 ? loads[2].toStringAsFixed(2) : '-';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.query_stats_rounded, size: 18, color: AppColors.accentBright),
+              SizedBox(width: 8),
+              Text(
+                'Carga Média do Sistema (Load Average)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _LoadValue(label: '1 minuto', value: l1),
+              _LoadValue(label: '5 minutos', value: l5),
+              _LoadValue(label: '15 minutos', value: l15),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadValue extends StatelessWidget {
+  const _LoadValue({required this.label, required this.value});
+  final String label, value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: AppColors.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiskItemCard extends StatelessWidget {
+  const _DiskItemCard({required this.disk, required this.bytes});
   final DiskMetric disk;
   final String Function(int) bytes;
+
   @override
-  Widget build(BuildContext context) => Card(
-      child: Padding(
-          padding: const EdgeInsets.all(16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.storage_outlined, color: AppColors.accentBright),
+  Widget build(BuildContext context) {
+    final critical = disk.usedPercent >= 90;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: critical
+              ? AppColors.accentBright.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.storage_rounded,
+                size: 18,
+                color: critical ? AppColors.accentBright : AppColors.accent,
+              ),
               const SizedBox(width: 8),
-              Expanded(
-                  child: Text(disk.mount,
-                      style: Theme.of(context).textTheme.titleMedium)),
-              Text('${disk.usedPercent.toStringAsFixed(1)}%',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700))
-            ]),
-            const SizedBox(height: 10),
-            ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                    value: (disk.usedPercent.clamp(0, 100) / 100).toDouble(),
-                    minHeight: 6,
-                    backgroundColor: Colors.white12,
-                    color: disk.usedPercent >= 90
-                        ? AppColors.accentBright
-                        : AppColors.accent)),
-            const SizedBox(height: 10),
-            Text('${bytes(disk.usedBytes)} usados de ${bytes(disk.sizeBytes)}',
-                style: Theme.of(context).textTheme.bodyMedium),
-          ])));
+              Text(
+                disk.mount,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Text(
+                '${disk.usedPercent.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: critical ? AppColors.accentBright : AppColors.text,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${bytes(disk.usedBytes)} usados de ${bytes(disk.sizeBytes)}',
+            style: const TextStyle(fontSize: 12, color: AppColors.muted),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              minHeight: 6,
+              value: (disk.usedPercent.clamp(0, 100) / 100).toDouble(),
+              backgroundColor: Colors.white12,
+              color: critical ? AppColors.accentBright : AppColors.online,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _NetworkCard extends StatelessWidget {
-  const _NetworkCard(
-      {required this.network, required this.rate, required this.bytes});
+class _NetworkItemCard extends StatelessWidget {
+  const _NetworkItemCard({
+    required this.network,
+    required this.rate,
+    required this.bytes,
+  });
+
   final NetworkMetric network;
   final String Function(double) rate;
   final String Function(int) bytes;
+
   @override
-  Widget build(BuildContext context) => Card(
-      child: Padding(
-          padding: const EdgeInsets.all(16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.lan_outlined, color: AppColors.accentBright),
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.lan_rounded, size: 18, color: AppColors.online),
               const SizedBox(width: 8),
+              Text(
+                network.interfaceName,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Ativa',
+                  style: TextStyle(fontSize: 11, color: AppColors.online),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
               Expanded(
-                  child: Text(network.interfaceName,
-                      style: Theme.of(context).textTheme.titleMedium)),
-              Text('Interface',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.muted))
-            ]),
-            const SizedBox(height: 13),
-            Row(children: [
+                child: Row(
+                  children: [
+                    const Icon(Icons.arrow_downward_rounded, size: 16, color: AppColors.online),
+                    const SizedBox(width: 6),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Download', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                        Text(
+                          rate(network.rxBytesPerSec),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
-                  child: _DetailMetric(
-                      icon: Icons.arrow_downward,
-                      label: 'Recebendo',
-                      value: rate(network.rxBytesPerSec))),
-              Expanded(
-                  child: _DetailMetric(
-                      icon: Icons.arrow_upward,
-                      label: 'Enviando',
-                      value: rate(network.txBytesPerSec)))
-            ]),
-            const SizedBox(height: 12),
-            Text(
-                'Total: RX ${bytes(network.rxBytes)} • TX ${bytes(network.txBytes)}',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppColors.muted)),
-          ])));
-}
-
-class _DetailMetric extends StatelessWidget {
-  const _DetailMetric(
-      {required this.icon, required this.label, required this.value});
-  final IconData icon;
-  final String label, value;
-  @override
-  Widget build(BuildContext context) => Row(children: [
-        Icon(icon, size: 18, color: AppColors.accent),
-        const SizedBox(width: 7),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.muted)),
-          Text(value, style: Theme.of(context).textTheme.titleSmall)
-        ])
-      ]);
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-  final String label, value;
-  @override
-  Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(
-            child: Text(label,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppColors.muted))),
-        const SizedBox(width: 14),
-        Flexible(child: Text(value, textAlign: TextAlign.right))
-      ]));
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, required this.subtitle});
-  final String title, subtitle;
-  @override
-  Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 2),
-        Text(subtitle,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.muted))
-      ]);
+                child: Row(
+                  children: [
+                    const Icon(Icons.arrow_upward_rounded, size: 16, color: AppColors.accentBright),
+                    const SizedBox(width: 6),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Upload', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                        Text(
+                          rate(network.txBytesPerSec),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _EmptyMetrics extends StatelessWidget {
   const _EmptyMetrics();
+
   @override
-  Widget build(BuildContext context) => const Card(
-      child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(children: [
-            Icon(Icons.query_stats_outlined, color: AppColors.muted, size: 36),
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.query_stats_rounded, color: AppColors.muted, size: 36),
             SizedBox(height: 10),
-            Text('Métricas ainda não foram recebidas do Agent.'),
-            SizedBox(height: 4),
-            Text('Atualize a tela após confirmar que o Agent está online.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted))
-          ])));
+            Text('Aguardando métricas do Agent...'),
+          ],
+        ),
+      );
 }
 
-class _Error extends StatelessWidget {
-  const _Error({required this.message, required this.onRetry});
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
   final String message;
   final Future<void> Function() onRetry;
+
   @override
   Widget build(BuildContext context) => Center(
-      child: Padding(
+        child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.cloud_off_outlined,
-                color: AppColors.accentBright, size: 40),
-            const SizedBox(height: 12),
-            Text('VPS indisponível',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton.icon(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off_rounded, color: AppColors.accentBright, size: 44),
+              const SizedBox(height: 12),
+              const Text('VPS Indisponível', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
+              const SizedBox(height: 16),
+              FilledButton.icon(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tentar novamente'))
-          ])));
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
 }

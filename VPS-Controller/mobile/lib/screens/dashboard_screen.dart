@@ -88,355 +88,216 @@ class DashboardScreenState extends State<DashboardScreen> {
 
     final current = server!;
     final metric = current.metric;
-    final running = current.containers
+    final runningContainers = current.containers
         .where((item) => item.state.toLowerCase() == 'running')
         .length;
+    final totalContainers = current.containers.length;
     final activeAlerts = alerts.where((item) => item.status == 'open').length;
     final online = current.agentStatus.toLowerCase() == 'online';
+    final primaryDisk = metric != null && metric.disks.isNotEmpty ? metric.disks.first : null;
+    final loadAvg = metric != null && metric.loadAverage.isNotEmpty ? metric.loadAverage.first : 0.0;
 
     return RefreshIndicator(
       onRefresh: refresh,
+      color: AppColors.accentBright,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
-          Text('VPS CONTROLLER',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.accentBright,
-                    letterSpacing: 1.8,
-                    fontWeight: FontWeight.w700,
-                  )),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: Text(AppConfig.primaryServerId,
-                    style: Theme.of(context).textTheme.headlineSmall),
-              ),
-              Icon(Icons.circle,
-                  size: 11,
-                  color: online ? AppColors.online : AppColors.accentBright),
-              const SizedBox(width: 7),
-              Text(online ? 'ONLINE' : 'OFFLINE',
-                  style: TextStyle(
-                    color: online ? AppColors.online : AppColors.accentBright,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: .8,
-                  )),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _ServerHero(server: current, online: online, onRefresh: refresh),
-          const SizedBox(height: 12),
-          _ConnectionOverview(
-            agentOnline: online,
-            externalStatus: current.externalStatus,
-            lastHeartbeatAt: current.lastHeartbeatAt,
-          ),
-          if (metric != null) ...[
-            const SizedBox(height: 12),
-            _OperationalInsight(
-              metric: metric,
-              agentOnline: online,
-              externalStatus: current.externalStatus,
-              activeAlerts: activeAlerts,
-            ),
-            const SizedBox(height: 18),
-            Text('Recursos', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 10),
-            LayoutBuilder(builder: (context, constraints) {
-              final columns = constraints.maxWidth >= 620 ? 4 : 2;
-              final width =
-                  (constraints.maxWidth - (columns - 1) * 10) / columns;
-              return Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  SizedBox(
-                      width: width,
-                      child: MetricCard(
-                          title: 'CPU',
-                          value: '${metric.cpuPercent.toStringAsFixed(1)}%',
-                          percent: metric.cpuPercent,
-                          icon: Icons.memory_outlined)),
-                  SizedBox(
-                      width: width,
-                      child: MetricCard(
-                          title: 'RAM',
-                          value:
-                              '${metric.ram.usedPercent.toStringAsFixed(1)}%',
-                          percent: metric.ram.usedPercent,
-                          subtitle:
-                              '${_bytes(metric.ram.usedBytes)} / ${_bytes(metric.ram.totalBytes)}',
-                          icon: Icons.sd_storage_outlined)),
-                  if (metric.disks.isNotEmpty)
-                    SizedBox(
-                        width: width,
-                        child: MetricCard(
-                            title: 'Disco ${metric.disks.first.mount}',
-                            value:
-                                '${_bytes(metric.disks.first.usedBytes)} / ${_bytes(metric.disks.first.sizeBytes)}',
-                            percent: metric.disks.first.usedPercent,
-                            subtitle:
-                                '${metric.disks.first.usedPercent.toStringAsFixed(1)}% usado',
-                            icon: Icons.storage_outlined)),
-                  SizedBox(
-                      width: width,
-                      child: MetricCard(
-                          title: 'Uptime',
-                          value: _uptime(metric.uptimeSeconds),
-                          percent: 0,
-                          icon: Icons.schedule_outlined)),
+          // Header Moderno com Card Gradiente
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF1E2228),
+                  online ? const Color(0xFF182A22) : const Color(0xFF2D181A),
                 ],
-              );
-            }),
-            if (metric.disks.length > 1) ...[
-              const SizedBox(height: 12),
-              _AdditionalDisks(
-                  disks: metric.disks.skip(1).toList(), bytes: _bytes),
-            ],
-          ],
-          const SizedBox(height: 18),
-          if (metric != null && metric.networks.isNotEmpty) ...[
-            _NetworkSummary(networks: metric.networks, rate: _rate),
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: (online ? AppColors.online : AppColors.accentBright)
+                    .withValues(alpha: 0.25),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.dns_rounded,
+                            size: 20,
+                            color: online ? AppColors.online : AppColors.accentBright,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'VPS PRINCIPAL',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.5,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                            Text(
+                              AppConfig.primaryServerId,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: (online ? AppColors.online : AppColors.accentBright)
+                            .withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: (online ? AppColors.online : AppColors.accentBright)
+                              .withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: online ? AppColors.online : AppColors.accentBright,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            online ? 'ONLINE' : 'OFFLINE',
+                            style: TextStyle(
+                              color: online ? AppColors.online : AppColors.accentBright,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    _QuickStat(
+                      icon: Icons.layers_rounded,
+                      label: 'Containers',
+                      value: '$runningContainers/$totalContainers',
+                      color: AppColors.text,
+                    ),
+                    const SizedBox(width: 16),
+                    _QuickStat(
+                      icon: Icons.timer_outlined,
+                      label: 'Uptime',
+                      value: metric != null ? _uptime(metric.uptimeSeconds) : '--',
+                      color: AppColors.text,
+                    ),
+                    const SizedBox(width: 16),
+                    _QuickStat(
+                      icon: Icons.warning_amber_rounded,
+                      label: 'Alertas',
+                      value: '$activeAlerts',
+                      color: activeAlerts > 0 ? AppColors.accentBright : AppColors.online,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Seção de Recursos
+          if (metric != null) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Métricas em Tempo Real',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const Text(
+                  'Atualizado ao vivo',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.online,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
+            MetricCard(
+              title: 'Uso de CPU',
+              value: '${metric.cpuPercent.toStringAsFixed(1)}%',
+              percent: metric.cpuPercent,
+              subtitle: 'Carga média: ${loadAvg.toStringAsFixed(2)}',
+              icon: Icons.speed_rounded,
+            ),
+            const SizedBox(height: 10),
+            MetricCard(
+              title: 'Memória RAM',
+              value: '${metric.ram.usedPercent.toStringAsFixed(1)}%',
+              percent: metric.ram.usedPercent,
+              subtitle:
+                  '${_bytes(metric.ram.usedBytes)} usados de ${_bytes(metric.ram.totalBytes)}',
+              icon: Icons.memory_rounded,
+            ),
+            if (primaryDisk != null) ...[
+              const SizedBox(height: 10),
+              MetricCard(
+                title: 'Armazenamento (${primaryDisk.mount})',
+                value: '${primaryDisk.usedPercent.toStringAsFixed(1)}%',
+                percent: primaryDisk.usedPercent,
+                subtitle:
+                    '${_bytes(primaryDisk.usedBytes)} usados de ${_bytes(primaryDisk.sizeBytes)}',
+                icon: Icons.storage_rounded,
+              ),
+            ],
+            const SizedBox(height: 16),
+            _NetworkSummary(networks: metric.networks, rate: _rate),
           ],
-          _SummaryCard(
-            icon: Icons.dns_outlined,
-            title: 'Docker',
-            value: '${current.containers.length} containers',
-            detail:
-                '$running rodando • ${current.containers.length - running} parados',
-          ),
-          const SizedBox(height: 10),
-          _SummaryCard(
-            icon: Icons.notifications_none_outlined,
-            title: 'Alertas ativos',
-            value: '$activeAlerts',
-            detail: activeAlerts == 1
-                ? 'Alerta requer atenção'
-                : 'Alertas requerem atenção',
-            critical: activeAlerts > 0,
-          ),
         ],
       ),
     );
   }
 }
 
-class _ServerHero extends StatelessWidget {
-  const _ServerHero(
-      {required this.server, required this.online, required this.onRefresh});
-  final ServerInfo server;
-  final bool online;
-  final Future<void> Function() onRefresh;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.dns_outlined,
-                  color: AppColors.accentBright, size: 27),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: Text(server.hostname ?? server.id,
-                      style: Theme.of(context).textTheme.titleLarge)),
-              IconButton(
-                  onPressed: onRefresh,
-                  tooltip: 'Atualizar',
-                  icon: const Icon(Icons.refresh)),
-            ]),
-            const Divider(height: 22),
-            Text(server.os ?? 'Sistema não informado',
-                style: Theme.of(context).textTheme.bodyLarge),
-            const SizedBox(height: 4),
-            Text(
-                "${server.arch ?? 'Arquitetura não informada'} • ${server.kernel ?? 'Kernel não informado'}",
-                style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 12),
-            Row(children: [
-              Icon(
-                  online ? Icons.shield_outlined : Icons.warning_amber_outlined,
-                  color: online ? AppColors.online : AppColors.accentBright,
-                  size: 18),
-              const SizedBox(width: 7),
-              Text(online ? 'Comunicação normal' : 'Sem comunicação recente'),
-            ]),
-          ]),
-        ),
-      );
-}
-
-class _ConnectionOverview extends StatelessWidget {
-  const _ConnectionOverview({
-    required this.agentOnline,
-    required this.externalStatus,
-    required this.lastHeartbeatAt,
-  });
-
-  final bool agentOnline;
-  final String externalStatus;
-  final String? lastHeartbeatAt;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Wrap(
-            spacing: 18,
-            runSpacing: 10,
-            children: [
-              _StatusItem(
-                icon: Icons.smart_toy_outlined,
-                label: 'Agent',
-                value: agentOnline ? 'Online' : 'Offline',
-                color: agentOnline ? AppColors.online : AppColors.accentBright,
-              ),
-              _StatusItem(
-                icon: Icons.public_outlined,
-                label: 'Monitor',
-                value: externalStatus == 'online' ? 'Online' : externalStatus,
-                color: externalStatus == 'online'
-                    ? AppColors.online
-                    : AppColors.muted,
-              ),
-              _StatusItem(
-                icon: Icons.access_time_outlined,
-                label: 'Último heartbeat',
-                value: _timeLabel(lastHeartbeatAt),
-                color: AppColors.muted,
-              ),
-            ],
-          ),
-        ),
-      );
-
-  String _timeLabel(String? value) {
-    if (value == null) return 'Não informado';
-    final date = DateTime.tryParse(value)?.toLocal();
-    if (date == null) return 'Não informado';
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return 'Hoje às $hour:$minute';
-  }
-}
-
-class _OperationalInsight extends StatelessWidget {
-  const _OperationalInsight({
-    required this.metric,
-    required this.agentOnline,
-    required this.externalStatus,
-    required this.activeAlerts,
-  });
-
-  final ServerMetric metric;
-  final bool agentOnline;
-  final String externalStatus;
-  final int activeAlerts;
-
-  @override
-  Widget build(BuildContext context) {
-    final messages = <String>[];
-    if (!agentOnline)
-      messages
-          .add('O Agent está offline; as métricas podem estar desatualizadas.');
-    if (externalStatus == 'offline')
-      messages.add('O monitor externo reportou a VPS como offline.');
-    if (metric.cpuPercent >= 80)
-      messages.add(
-          'CPU em ${metric.cpuPercent.toStringAsFixed(1)}% no último envio.');
-    if (metric.ram.usedPercent >= 80)
-      messages.add(
-          'RAM em ${metric.ram.usedPercent.toStringAsFixed(1)}% no último envio.');
-    for (final disk in metric.disks.where((item) => item.usedPercent >= 80)) {
-      messages.add(
-          'O disco ${disk.mount} está em ${disk.usedPercent.toStringAsFixed(1)}% de uso.');
-    }
-    if (activeAlerts > 0)
-      messages.add('$activeAlerts alerta(s) ativo(s) requerem revisão.');
-    final attention = !agentOnline ||
-        externalStatus == 'offline' ||
-        metric.cpuPercent >= 80 ||
-        metric.ram.usedPercent >= 80 ||
-        metric.disks.any((item) => item.usedPercent >= 80) ||
-        activeAlerts > 0;
-    if (messages.isEmpty)
-      messages.add(
-          'Sem condição de atenção identificada nos dados recebidos agora.');
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(
-                attention
-                    ? Icons.tips_and_updates_outlined
-                    : Icons.check_circle_outline,
-                color: attention ? AppColors.warning : AppColors.online,
-                size: 20),
-            const SizedBox(width: 8),
-            Text(attention ? 'Pontos para acompanhar' : 'Panorama operacional',
-                style: Theme.of(context).textTheme.titleMedium),
-          ]),
-          const SizedBox(height: 9),
-          for (final message in messages)
-            Padding(
-              padding: const EdgeInsets.only(top: 5),
-              child:
-                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('•  '),
-                Expanded(
-                    child: Text(message,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: AppColors.muted)))
-              ]),
-            ),
-        ]),
-      ),
-    );
-  }
-}
-
-class _AdditionalDisks extends StatelessWidget {
-  const _AdditionalDisks({required this.disks, required this.bytes});
-  final List<DiskMetric> disks;
-  final String Function(int) bytes;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Outros volumes',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 7),
-            for (final disk in disks)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(children: [
-                  Expanded(child: Text(disk.mount)),
-                  Text('${bytes(disk.usedBytes)} / ${bytes(disk.sizeBytes)}',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: AppColors.muted)),
-                  const SizedBox(width: 10),
-                  Text('${disk.usedPercent.toStringAsFixed(0)}%',
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
-                ]),
-              ),
-          ]),
-        ),
-      );
-}
-
-class _StatusItem extends StatelessWidget {
-  const _StatusItem({
+class _QuickStat extends StatelessWidget {
+  const _QuickStat({
     required this.icon,
     required this.label,
     required this.value,
@@ -444,29 +305,54 @@ class _StatusItem extends StatelessWidget {
   });
 
   final IconData icon;
-  final String label, value;
+  final String label;
+  final String value;
   final Color color;
 
   @override
-  Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 7),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.muted)),
-              Text(value,
-                  style: TextStyle(color: color, fontWeight: FontWeight.w700)),
-            ],
-          ),
-        ],
-      );
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 14, color: AppColors.muted),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.muted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _NetworkSummary extends StatelessWidget {
@@ -480,76 +366,112 @@ class _NetworkSummary extends StatelessWidget {
         networks.fold<double>(0, (total, item) => total + item.rxBytesPerSec);
     final tx =
         networks.fold<double>(0, (total, item) => total + item.txBytesPerSec);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.lan_outlined,
-                color: AppColors.accentBright, size: 20),
-            const SizedBox(width: 8),
-            Text('Rede', style: Theme.of(context).textTheme.titleMedium),
-            const Spacer(),
-            Text('${networks.length} interface(s)',
-                style: Theme.of(context).textTheme.bodySmall),
-          ]),
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.swap_vert_rounded,
+                  color: AppColors.accentBright,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Tráfego de Rede',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const Spacer(),
+              Text(
+                '${networks.length} interface(s)',
+                style: const TextStyle(fontSize: 12, color: AppColors.muted),
+              ),
+            ],
+          ),
           const SizedBox(height: 14),
-          Row(children: [
-            Expanded(
+          Row(
+            children: [
+              Expanded(
                 child: _TrafficValue(
-                    icon: Icons.arrow_downward,
-                    label: 'Recebendo',
-                    value: rate(rx))),
-            Expanded(
+                  icon: Icons.arrow_downward_rounded,
+                  label: 'Download / RX',
+                  value: rate(rx),
+                  color: AppColors.online,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: _TrafficValue(
-                    icon: Icons.arrow_upward,
-                    label: 'Enviando',
-                    value: rate(tx))),
-          ]),
-        ]),
+                  icon: Icons.arrow_upward_rounded,
+                  label: 'Upload / TX',
+                  value: rate(tx),
+                  color: AppColors.accentBright,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
 class _TrafficValue extends StatelessWidget {
-  const _TrafficValue(
-      {required this.icon, required this.label, required this.value});
+  const _TrafficValue({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
   final IconData icon;
-  final String label, value;
+  final String label;
+  final String value;
+  final Color color;
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-        Icon(icon, color: AppColors.accent, size: 18),
-        const SizedBox(width: 7),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
-        ]),
-      ]);
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard(
-      {required this.icon,
-      required this.title,
-      required this.value,
-      required this.detail,
-      this.critical = false});
-  final IconData icon;
-  final String title, value, detail;
-  final bool critical;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          leading: Icon(icon,
-              color: critical ? AppColors.accentBright : AppColors.accent),
-          title: Text(title),
-          subtitle: Text(detail),
-          trailing: Text(value, style: Theme.of(context).textTheme.titleMedium),
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       );
 }
@@ -564,28 +486,41 @@ class _ErrorState extends StatelessWidget {
   Widget build(BuildContext context) => Center(
         child: Padding(
           padding: const EdgeInsets.all(28),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.cloud_off_outlined,
-                    color: AppColors.accentBright, size: 42),
-                const SizedBox(height: 12),
-                Text(message, style: Theme.of(context).textTheme.titleLarge),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.cloud_off_rounded,
+                  color: AppColors.accentBright,
+                  size: 48,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  message,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
                 const SizedBox(height: 8),
                 const Text(
-                    'Verifique sua conexão, o Tailscale e se a VPS está online.',
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 6),
-                Text(details,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall),
+                  'Verifique sua conexão, o Tailscale e se a VPS está online.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted),
+                ),
                 const SizedBox(height: 18),
                 FilledButton.icon(
-                    onPressed: onRetry,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Tentar novamente')),
-              ]),
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Tentar novamente'),
+                ),
+              ],
             ),
           ),
         ),

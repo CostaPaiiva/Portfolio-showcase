@@ -4,6 +4,7 @@ import '../widgets/app_surface.dart';
 import '../services/api_service.dart';
 import '../services/live_service.dart';
 import 'alerts_screen.dart';
+import 'chat_screen.dart';
 import 'dashboard_screen.dart';
 import 'docker_screen.dart';
 import 'settings_screen.dart';
@@ -54,12 +55,13 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final title = ['Início', 'Docker', 'Sistema', 'Alertas', 'Ajustes'][index];
+    final title = ['Início', 'Docker', 'Sistema', 'Copiloto', 'Alertas', 'Ajustes'][index];
     final body = switch (index) {
       0 => DashboardScreen(key: _dashboardKey, api: widget.api),
       1 => DockerScreen(api: widget.api),
       2 => SystemScreen(api: widget.api),
-      3 => AlertsScreen(key: _alertsKey, api: widget.api),
+      3 => ChatScreen(api: widget.api),
+      4 => AlertsScreen(key: _alertsKey, api: widget.api),
       _ => SettingsScreen(onLogout: widget.onLogout),
     };
     return Scaffold(
@@ -75,6 +77,10 @@ class _HomeShellState extends State<HomeShell> {
                 icon: Icon(Icons.view_list_outlined), label: 'Docker'),
             NavigationDestination(
                 icon: Icon(Icons.memory_outlined), label: 'Sistema'),
+            NavigationDestination(
+                icon: Icon(Icons.auto_awesome_outlined),
+                selectedIcon: Icon(Icons.auto_awesome),
+                label: 'Copiloto'),
             NavigationDestination(
                 icon: Icon(Icons.notifications_outlined), label: 'Alertas'),
             NavigationDestination(

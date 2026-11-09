@@ -15,7 +15,17 @@ export interface ServerRecord {
   agentStatus: 'online'|'offline'|'unknown'; externalStatus: 'online'|'offline'|'unknown';
   lastHeartbeatAt?: string; lastMonitorAt?: string; monitorLatencyMs?: number; metric?: MetricSnapshot; containers: ContainerSnapshot[]; updatedAt: string;
 }
-export type ActionType='docker.start'|'docker.stop'|'docker.restart'|'service.start'|'service.stop'|'service.restart';
+export type ActionType =
+  | 'docker.start'
+  | 'docker.stop'
+  | 'docker.restart'
+  | 'service.start'
+  | 'service.stop'
+  | 'service.restart'
+  | 'file.create_folder'
+  | 'file.delete_folder'
+  | 'file.write_file'
+  | 'file.delete_file';
 export interface RemoteAction { id:string; serverId:string; type:ActionType; target:string; createdAt:string; status:'pending'|'running'|'success'|'failed'; result?:string; completedAt?:string; }
 export interface AlertRecord { id:string; serverId:string; type:string; message:string; severity:'warning'|'critical'; createdAt:string; status:'open'|'acknowledged'|'resolved'; }
 export interface State { servers:Record<string,ServerRecord>; history:Record<string,MetricSnapshot[]>; actions:Record<string,RemoteAction>; alerts:AlertRecord[]; }
