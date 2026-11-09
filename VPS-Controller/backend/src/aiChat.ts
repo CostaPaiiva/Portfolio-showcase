@@ -10,7 +10,7 @@ function getAIClient(keyOverride?: string) {
   if (keys.length === 0) return null;
   const apiKey = keyOverride || keys[currentKeyIndex % keys.length];
   return {
-    client: new GoogleGenAI({ apiKey }),
+    client: new GoogleGenAI({ apiKey, apiVersion: 'v1beta' }),
     keyIndex: keyOverride ? -1 : (currentKeyIndex % keys.length),
     totalKeys: keys.length,
   };
