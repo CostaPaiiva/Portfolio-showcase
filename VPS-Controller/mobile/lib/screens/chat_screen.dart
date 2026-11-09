@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/api_service.dart';
 
 class ChatMessageItem {
@@ -19,16 +20,87 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessageItem> _messages = [
     ChatMessageItem(
       role: 'model',
-      text: 'Olá Thiago! Sou seu Copiloto SysAdmin para a VPS.\n\nVocê pode me pedir diagnósticos, status dos containers Docker, alertas do sistema ou mandar executar comandos como restart de containers.',
+      text:
+          'Olá Thiago! Sou seu Copiloto SysAdmin para a VPS.\n\nAgora você pode falar comigo por texto ou por voz usando o microfone 🎙️!\n\nPosso executar diagnósticos no terminal, verificar uso de CPU/RAM, inspecionar logs de containers e serviços do sistema.',
     ),
   ];
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final stt.SpeechToText _speech = stt.SpeechToText();
   bool _loading = false;
+  bool _isListening = false;
+  bool _speechAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      final available = await _speech.initialize(
+        onError: (val) {
+          if (mounted) setState(() => _isListening = false);
+        },
+        onStatus: (status) {
+          if (status == 'done' || status == 'notListening') {
+            if (mounted) setState(() => _isListening = false);
+          }
+        },
+      );
+      if (mounted) setState(() => _speechAvailable = available);
+    } catch (_) {
+      if (mounted) setState(() => _speechAvailable = false);
+    }
+  }
+
+  Future<void> _toggleListening() async {
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+      return;
+    }
+
+    if (!_speechAvailable) {
+      await _initSpeech();
+      if (!_speechAvailable) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Reconhecimento de voz indisponível ou permissão negada.')),
+          );
+        }
+        return;
+      }
+    }
+
+    setState(() => _isListening = true);
+    await _speech.listen(
+      listenOptions: stt.SpeechListenOptions(
+        listenMode: stt.ListenMode.dictation,
+        cancelOnError: true,
+      ),
+      onResult: (result) {
+        setState(() {
+          _controller.text = result.recognizedWords;
+          _controller.selection = TextSelection.fromPosition(
+            TextPosition(offset: _controller.text.length),
+          );
+        });
+      },
+    );
+  }
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _loading) return;
+
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+    }
 
     _controller.clear();
     setState(() {
@@ -39,7 +111,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final payload = _messages.map((m) => {'role': m.role, 'content': m.text}).toList();
+      final payload =
+          _messages.map((m) => {'role': m.role, 'content': m.text}).toList();
       final reply = await widget.api.sendChatMessage(payload);
 
       if (mounted) {
@@ -82,6 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _speech.stop();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -103,30 +177,36 @@ class _ChatScreenState extends State<ChatScreen> {
               final isUser = msg.role == 'user';
 
               return Align(
-                alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                alignment:
+                    isUser ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.78,
+                    maxWidth: MediaQuery.of(context).size.width * 0.8,
                   ),
                   decoration: BoxDecoration(
                     color: isUser
                         ? theme.colorScheme.primary
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                        : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isUser ? 16 : 4),
-                      bottomRight: Radius.circular(isUser ? 4 : 16),
+                      bottomLeft: isUser
+                          ? const Radius.circular(16)
+                          : const Radius.circular(2),
+                      bottomRight: isUser
+                          ? const Radius.circular(2)
+                          : const Radius.circular(16),
                     ),
                   ),
-                  child: SelectableText(
+                  child: Text(
                     msg.text,
                     style: TextStyle(
                       color: isUser
                           ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurfaceVariant,
+                          : theme.colorScheme.onSurface,
                       fontSize: 14.5,
                       height: 1.35,
                     ),
@@ -168,13 +248,25 @@ class _ChatScreenState extends State<ChatScreen> {
             top: false,
             child: Row(
               children: [
+                IconButton(
+                  tooltip: _isListening ? 'Parar gravação' : 'Falar por áudio',
+                  icon: Icon(
+                    _isListening ? Icons.mic : Icons.mic_none,
+                    color: _isListening
+                        ? theme.colorScheme.error
+                        : theme.colorScheme.primary,
+                  ),
+                  onPressed: _loading ? null : _toggleListening,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _controller,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendMessage(),
                     decoration: InputDecoration(
-                      hintText: 'Pergunte ou envie um comando...',
+                      hintText: _isListening
+                          ? 'Ouvindo sua voz...'
+                          : 'Pergunte ou envie um comando...',
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 10,
@@ -184,7 +276,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                      fillColor: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.4),
                     ),
                   ),
                 ),

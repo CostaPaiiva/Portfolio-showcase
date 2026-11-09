@@ -154,9 +154,24 @@ class ApiService {
   }
 
   Future<String> sendChatMessage(List<Map<String, String>> messages) async {
-    final data = await _request('POST', '/api/chat', data: {'messages': messages})
-        as Map<String, dynamic>;
-    return (data['reply'] as String?) ?? 'Sem resposta da IA.';
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 15)
+      ..idleTimeout = const Duration(seconds: 60);
+    try {
+      final request = await client.postUrl(_url('/api/chat'));
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode({'messages': messages}));
+      final response = await request.close().timeout(const Duration(seconds: 60));
+      final text = await utf8.decoder.bind(response).join().timeout(const Duration(seconds: 60));
+      if (response.statusCode != 200) {
+        throw ApiException('Erro ${response.statusCode}: $text');
+      }
+      final data = jsonDecode(text) as Map<String, dynamic>;
+      return (data['reply'] as String?) ?? 'Sem resposta da IA.';
+    } finally {
+      client.close(force: true);
+    }
   }
 
   void dispose() {
