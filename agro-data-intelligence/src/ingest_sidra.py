@@ -14,7 +14,9 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-URL = "https://apisidra.ibge.gov.br/values/t/1612/n3/all/v/216/p/2022/c782/all"
+# Endpoint da API SIDRA (PAM - Produção Agrícola Municipal - Tabela 1612)
+# t/1612 = Pesquisa PAM, n3/all = Todos os Estados, v/214,216 = Quantidade Produzida e Área Colhida, p/2022 = Ano 2022, c81/all = Todas as culturas
+URL = "https://apisidra.ibge.gov.br/values/t/1612/n3/all/v/214,216/p/2022/c81/all"
 
 # Configuração do cliente MinIO (S3)
 s3_client = boto3.client(
