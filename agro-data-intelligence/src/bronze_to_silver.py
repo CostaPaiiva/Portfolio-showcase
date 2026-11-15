@@ -9,9 +9,11 @@ load_dotenv()
 # ==============================================================================
 # 1. Configuração da Sessão PySpark com conector S3A para comunicação com o MinIO
 # ==============================================================================
-# O Spark 3.5+ usa Hadoop 3.3.4 internamente. A biblioteca hadoop-aws espera
-# valores puramente numéricos em milissegundos para timeouts, evitando conflito
-# com strings como "60s".
+# - spark.jars.packages: baixa automaticamente os drivers Hadoop AWS e AWS Java SDK via Maven.
+# - s3a.endpoint: aponta para a porta da API S3 do MinIO local.
+# - s3a.path.style.access: necessário para MinIO (formato http://host:porta/bucket em vez de bucket.host).
+# - s3a.impl: define a implementação do sistema de arquivos S3A.
+# - SimpleAWSCredentialsProvider: força o provedor de credenciais v1 embutido no aws-java-sdk-bundle
 spark = SparkSession.builder \
     .appName("AgroBronzeToSilver") \
     .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262") \
@@ -20,9 +22,7 @@ spark = SparkSession.builder \
     .config("spark.hadoop.fs.s3a.secret.key", os.getenv('MINIO_ROOT_PASSWORD')) \
     .config("spark.hadoop.fs.s3a.path.style.access", "true") \
     .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
-    .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false") \
-    .config("spark.hadoop.fs.s3a.connection.timeout", "60000") \
-    .config("spark.hadoop.fs.s3a.threads.keepalivetime", "60") \
+    .config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
     .getOrCreate()
 
 # Reduz a verbosidade dos logs do Spark para WARN, mantendo o terminal limpo
