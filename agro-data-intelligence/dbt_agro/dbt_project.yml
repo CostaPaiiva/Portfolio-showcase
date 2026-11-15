@@ -1,0 +1,20 @@
+# ==============================================================================
+# CONFIGURAÇÃO DO PROJETO DBT (dbt_project.yml)
+# ==============================================================================
+# Define metadados do projeto dbt, apontamentos de pastas e o profile de conexão
+# ==============================================================================
+
+# Nome do projeto dbt (usado internamente pelo dbt)
+name: 'agro_data'
+
+# Versão do projeto
+version: '1.0.0'
+
+# Versão da sintaxe de configuração do dbt
+config-version: 2
+
+# Nome do profile (definido em profiles.yml) que contém as credenciais do PostgreSQL
+profile: 'agro_profile'
+
+# Diretório onde ficam os modelos SQL de transformação (staging, marts/gold)
+model-paths: ["models"]
