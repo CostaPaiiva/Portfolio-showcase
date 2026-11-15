@@ -51,8 +51,8 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     # Exposição de portas: 9000 (API S3) e 9001 (Console Web / UI)
     ports:
-      - "100.105.65.75:9000:9000"
-      - "100.105.65.75:9001:9001"
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       # Volume nomeado onde os buckets e arquivos (objetos) serão armazenados
       - minio_data:/data
