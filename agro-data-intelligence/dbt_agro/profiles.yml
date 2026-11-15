@@ -1,0 +1,36 @@
+# ==============================================================================
+# PERFIL DE CONEXÃO DO DBT (Data Build Tool)
+# ==============================================================================
+# Este arquivo define como o dbt se conecta ao Data Warehouse (PostgreSQL).
+# Cada projeto dbt referencia um profile específico definido no arquivo dbt_project.yml.
+# ==============================================================================
+
+agro_profile:
+  # Ambiente padrão de execução (desenvolvimento)
+  target: dev
+  
+  outputs:
+    dev:
+      # Driver do banco de dados de destino
+      type: postgres
+      
+      # Endereço de host local da VPS (127.0.0.1 evita exposição à internet pública)
+      host: 127.0.0.1
+      
+      # Porta mapeada no docker-compose para o container 'agro-postgres'
+      port: 15432
+      
+      # Usuário com permissão de leitura/escrita no DW
+      user: agro_admin
+      
+      # Senha de autenticação do usuário do banco
+      pass: "123456"
+      
+      # Nome do banco de dados de destino
+      dbname: agro
+      
+      # Schema onde as tabelas e views analíticas (camada Gold) serão materializadas
+      schema: gold
+      
+      # Quantidade de threads (consultas simultâneas/paralelas) executadas pelo dbt
+      threads: 2
