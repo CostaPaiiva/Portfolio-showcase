@@ -60,6 +60,67 @@ services:
     networks:
       - agro-net
 
+  # ============================================================================
+  # SERVIÇO: AIRFLOW (Orquestrador de Pipelines)
+  # ============================================================================
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: agro-airflow
+    restart: unless-stopped
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:18080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./dbt_agro:/opt/airflow/dbt_agro
+    command: >
+      bash -c "airflow db migrate &&
+               airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin &&
+               airflow webserver & airflow scheduler"
+    mem_limit: 3g
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - agro-net
+
+  # ============================================================================
+  # SERVIÇO: SUPERSET (Visualização e Dashboards)
+  # ============================================================================
+  superset:
+    image: apache/superset:latest
+    container_name: agro-superset
+    restart: unless-stopped
+    environment:
+      - SUPERSET_SECRET_KEY=uma_chave_secreta_muito_longa_aqui
+      - DATABASE_DB=superset
+      - DATABASE_HOST=postgres
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_USER=${POSTGRES_USER}
+    ports:
+      - "127.0.0.1:8088:8088"
+    mem_limit: 2g
+    command: >
+      bash -c "superset db upgrade &&
+               superset fab create-admin --username admin --firstname Admin --lastname User --email admin@example.com --password admin &&
+               superset init &&
+               /usr/bin/run-server.sh"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - agro-net
+
 # ==============================================================================
 # DEFINIÇÃO DE VOLUMES PERSISTENTES
 # ==============================================================================

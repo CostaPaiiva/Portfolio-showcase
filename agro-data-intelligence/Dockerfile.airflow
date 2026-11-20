@@ -1,0 +1,7 @@
+FROM apache/airflow:2.8.1-python3.11
+USER root
+# Instala Java (necessário para o PySpark)
+RUN apt-get update && apt-get install -y default-jre && apt-get clean
+USER airflow
+# Instala as bibliotecas Python do nosso projeto
+RUN pip install --no-cache-dir requests boto3 python-dotenv pyspark dbt-postgres
