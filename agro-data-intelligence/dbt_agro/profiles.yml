@@ -20,11 +20,11 @@ agro_profile:
       # Porta mapeada no docker-compose para o container 'agro-postgres'
       port: 15432
       
-      # Usuário com permissão de leitura/escrita no DW
-      user: agro_admin
+      # Usuário com permissão de leitura/escrita no DW (lido do ambiente ou fallback)
+      user: "{{ env_var('POSTGRES_USER', 'agro_admin') }}"
       
-      # Senha de autenticação do usuário do banco
-      pass: "123456"
+      # Senha de autenticação lida da variável de ambiente
+      pass: "{{ env_var('POSTGRES_PASSWORD') }}"
       
       # Nome do banco de dados de destino
       dbname: agro
