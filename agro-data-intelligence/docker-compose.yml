@@ -85,8 +85,9 @@ services:
       - ./dbt_agro:/opt/airflow/dbt_agro
     command: >
       bash -c "airflow db migrate &&
-               airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin &&
-               airflow webserver & airflow scheduler"
+               (airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin || true) &&
+               airflow webserver &
+               exec airflow scheduler"
     mem_limit: 3g
     depends_on:
       postgres:
@@ -112,7 +113,7 @@ services:
     mem_limit: 2g
     command: >
       bash -c "superset db upgrade &&
-               superset fab create-admin --username admin --firstname Admin --lastname User --email admin@example.com --password admin &&
+               (superset fab create-admin --username admin --firstname Admin --lastname User --email admin@example.com --password admin || true) &&
                superset init &&
                /usr/bin/run-server.sh"
     depends_on:
