@@ -14,11 +14,11 @@ agro_profile:
       # Driver do banco de dados de destino
       type: postgres
       
-      # Endereço de host local da VPS (127.0.0.1 evita exposição à internet pública)
-      host: 127.0.0.1
+      # Host do PostgreSQL (no docker usa o nome do serviço 'postgres'; localmente pode usar 127.0.0.1)
+      host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
       
-      # Porta mapeada no docker-compose para o container 'agro-postgres'
-      port: 15432
+      # Porta do PostgreSQL (5432 na rede interna docker, ou 15432 no host)
+      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
       
       # Usuário com permissão de leitura/escrita no DW (lido do ambiente ou fallback)
       user: "{{ env_var('POSTGRES_USER', 'agro_admin') }}"

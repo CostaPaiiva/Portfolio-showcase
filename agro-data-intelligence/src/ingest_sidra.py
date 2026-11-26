@@ -19,9 +19,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 URL = "https://apisidra.ibge.gov.br/values/t/1612/n3/all/v/214,216/p/2022/c81/all"
 
 # Configuração do cliente MinIO (S3)
+# Suporta execução dentro do container Docker (MINIO_ENDPOINT=http://minio:9000) ou no host local (127.0.0.1:9000)
+minio_endpoint = os.getenv('MINIO_ENDPOINT', 'http://minio:9000')
+
 s3_client = boto3.client(
     's3',
-    endpoint_url='http://127.0.0.1:9000',
+    endpoint_url=minio_endpoint,
     aws_access_key_id=os.getenv('MINIO_ROOT_USER'),
     aws_secret_access_key=os.getenv('MINIO_ROOT_PASSWORD'),
     config=Config(signature_version='s3v4'),

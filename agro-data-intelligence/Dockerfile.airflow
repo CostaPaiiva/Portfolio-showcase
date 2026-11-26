@@ -1,7 +1,20 @@
+# Imagem base oficial do Apache Airflow com Python 3.11 pré-instalado
 FROM apache/airflow:2.8.1-python3.11
+
+# Troca para o usuário root para instalar pacotes a nível de sistema operacional via apt-get
 USER root
-# Instala Java (necessário para o PySpark)
+
+# Atualiza repositórios do Debian, instala o Java Runtime Environment (JRE) necessário para execução do Apache Spark / PySpark e limpa o cache do apt
 RUN apt-get update && apt-get install -y default-jre && apt-get clean
+
+# Retorna para o usuário sem privilégios 'airflow' por segurança e padrão de execução do container
 USER airflow
-# Instala as bibliotecas Python do nosso projeto
+
+# Instala as bibliotecas Python necessárias para os pipelines de dados:
+# - requests: requisições HTTP (coleta de APIs externas)
+# - boto3: cliente AWS SDK para interagir com o MinIO (S3 compatível)
+# - python-dotenv: leitura e carregamento de variáveis de ambiente de arquivos .env
+# - pyspark: processamento distribuído e transformação de grandes volumes de dados
+# - dbt-postgres: adaptador do dbt para orquestrar e rodar modelos SQL no PostgreSQL
 RUN pip install --no-cache-dir requests boto3 python-dotenv pyspark dbt-postgres
+

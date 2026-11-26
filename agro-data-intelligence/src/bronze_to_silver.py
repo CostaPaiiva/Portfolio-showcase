@@ -13,10 +13,13 @@ load_dotenv()
 # como "30s", "60s" e "24h". O driver hadoop-aws 3.3.4 faz parse desses campos usando
 # getInt/getLong estritos (sem suporte à unidade de tempo). Portanto, sobrepomos
 # explicitamente todas as chaves de timeout/duração para valores puramente numéricos.
+# Obtém endpoint do MinIO dinamicamente (padrão 'http://minio:9000' na rede Docker ou configurável via .env)
+minio_endpoint = os.getenv('MINIO_ENDPOINT', 'http://minio:9000')
+
 spark = SparkSession.builder \
     .appName("AgroBronzeToSilver") \
     .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262") \
-    .config("spark.hadoop.fs.s3a.endpoint", "http://127.0.0.1:9000") \
+    .config("spark.hadoop.fs.s3a.endpoint", minio_endpoint) \
     .config("spark.hadoop.fs.s3a.access.key", os.getenv('MINIO_ROOT_USER')) \
     .config("spark.hadoop.fs.s3a.secret.key", os.getenv('MINIO_ROOT_PASSWORD')) \
     .config("spark.hadoop.fs.s3a.path.style.access", "true") \
