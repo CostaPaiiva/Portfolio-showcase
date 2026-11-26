@@ -6,31 +6,14 @@
 # ==============================================================================
 
 agro_profile:
-  # Ambiente padrão de execução (desenvolvimento)
   target: dev
-  
   outputs:
     dev:
-      # Driver do banco de dados de destino
       type: postgres
-      
-      # Host do PostgreSQL (no docker usa o nome do serviço 'postgres'; localmente pode usar 127.0.0.1)
       host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
-      
-      # Porta do PostgreSQL (5432 na rede interna docker, ou 15432 no host)
-      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
-      
-      # Usuário com permissão de leitura/escrita no DW (lido do ambiente ou fallback)
+      port: 5432
       user: "{{ env_var('POSTGRES_USER', 'agro_admin') }}"
-      
-      # Senha de autenticação lida da variável de ambiente
-      pass: "{{ env_var('POSTGRES_PASSWORD') }}"
-      
-      # Nome do banco de dados de destino
-      dbname: agro
-      
-      # Schema onde as tabelas e views analíticas (camada Gold) serão materializadas
+      pass: "{{ env_var('POSTGRES_PASSWORD', 'agro_admin') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'agro') }}"
       schema: gold
-      
-      # Quantidade de threads (consultas simultâneas/paralelas) executadas pelo dbt
       threads: 2
