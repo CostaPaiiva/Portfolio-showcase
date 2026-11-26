@@ -4,3 +4,7 @@
 
 CREATE DATABASE airflow;
 CREATE DATABASE superset;
+
+\connect agro;
+CREATE SCHEMA IF NOT EXISTS gold;
+
