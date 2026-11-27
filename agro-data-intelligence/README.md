@@ -1,4 +1,4 @@
-# 🌱 Agro Data Intelligence Brasil
+# Agro Data Intelligence Brasil
 
 [![Apache Airflow](https://img.shields.io/badge/Airflow-2.8.1-017CEE?style=flat-square&logo=Apache%20Airflow&logoColor=white)](https://airflow.apache.org/)
 [![Apache Spark](https://img.shields.io/badge/PySpark-3.5%2B-E25A1C?style=flat-square&logo=Apache%20Spark&logoColor=white)](https://spark.apache.org/)
