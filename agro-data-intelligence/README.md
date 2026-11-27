@@ -12,23 +12,23 @@
 
 ---
 
-## 📑 Sumário
+## Sumário
 
-- [Visão Geral & Contexto de Negócio](#-visão-geral--contexto-de-negócio)
-- [Arquitetura da Solução](#-arquitetura-da-solução)
-- [Arquitetura Medallion (Data Lakehouse)](#-arquitetura-medallion-data-lakehouse)
-- [Modelagem Dimensional (Star Schema)](#-modelagem-dimensional-star-schema)
-- [Stack de Tecnologias](#-stack-de-tecnologias)
-- [Estrutura do Repositório](#-estrutura-do-repositório)
-- [Decisões Arquiteturais (ADRs)](#-decisões-arquiteturais-adrs)
-- [Como Executar Localmente](#-como-executar-localmente)
-- [Monitoramento & Portas de Acesso](#-monitoramento--portas-de-acesso)
-- [Evidências em Produção (Screenshots)](#-evidências-em-produção-screenshots)
-- [Próximos Passos (Roadmap)](#-próximos-passos-roadmap)
+- [Visão Geral & Contexto de Negócio](#visão-geral--contexto-de-negócio)
+- [Arquitetura da Solução](#arquitetura-da-solução)
+- [Arquitetura Medallion (Data Lakehouse)](#arquitetura-medallion-data-lakehouse)
+- [Modelagem Dimensional (Star Schema)](#modelagem-dimensional-star-schema)
+- [Stack de Tecnologias](#stack-de-tecnologias)
+- [Estrutura do Repositório](#estrutura-do-repositório)
+- [Decisões Arquiteturais (ADRs)](#decisões-arquiteturais-adrs)
+- [Como Executar Localmente](#como-executar-localmente)
+- [Monitoramento & Portas de Acesso](#monitoramento--portas-de-acesso)
+- [Evidências em Produção (Screenshots)](#evidências-em-produção-screenshots)
+- [Próximos Passos (Roadmap)](#próximos-passos-roadmap)
 
 ---
 
-## 🎯 Visão Geral & Contexto de Negócio
+## Visão Geral & Contexto de Negócio
 
 Os dados estatísticos e climáticos do agronegócio nacional (IBGE, CONAB, INMET) encontram-se fragmentados e distribuídos em múltiplos formatos governamentais com baixa padronização.
 
@@ -39,7 +39,7 @@ Esta plataforma resolve esse desafio integrando a **Pesquisa Agrícola Municipal
 
 ---
 
-## 🏗️ Arquitetura da Solução
+## Arquitetura da Solução
 
 O fluxo implementa orquestração resiliente com **Apache Airflow**, armazenamento em **Object Storage MinIO (S3)**, processamento escalável via **PySpark** e transformações analíticas governadas por **dbt**:
 
@@ -76,7 +76,7 @@ flowchart TD
 
 ---
 
-## 🏅 Arquitetura Medallion (Data Lakehouse)
+## Arquitetura Medallion (Data Lakehouse)
 
 | Camada | Armazenamento / Tabela | Formato | Papel na Plataforma |
 | :--- | :--- | :--- | :--- |
@@ -86,7 +86,7 @@ flowchart TD
 
 ---
 
-## ⭐ Modelagem Dimensional (Star Schema)
+## Modelagem Dimensional (Star Schema)
 
 A camada **Gold** é materializada no PostgreSQL através de modelos **dbt**, estabelecendo integridade relacional e linhagem rastreável:
 
@@ -115,7 +115,7 @@ erDiagram
 
 ---
 
-## 🛠️ Stack de Tecnologias
+## Stack de Tecnologias
 
 | Domínio | Tecnologia | Função no Projeto |
 | :--- | :--- | :--- |
@@ -130,7 +130,7 @@ erDiagram
 
 ---
 
-## 📂 Estrutura do Repositório
+## Estrutura do Repositório
 
 ```bash
 agro-data-intelligence/
@@ -158,7 +158,7 @@ agro-data-intelligence/
 
 ---
 
-## 💡 Decisões Arquiteturais (ADRs)
+## Decisões Arquiteturais (ADRs)
 
 * **Por que MinIO em vez de salvar diretamente no PostgreSQL?**
   Garante o desacoplamento entre armazenamento e processamento. O dado bruto (Bronze) é preservado integralmente na sua forma original, permitindo reprocessamentos históricos (re-play) sem custos de requisição externa.
@@ -171,7 +171,7 @@ agro-data-intelligence/
 
 ---
 
-## 🚀 Como Executar Localmente
+## Como Executar Localmente
 
 ### Pré-requisitos
 - [Docker](https://docs.docker.com/get-docker/) e [Docker Compose](https://docs.docker.com/compose/) instalados.
@@ -204,7 +204,7 @@ agro-data-intelligence/
 
 ---
 
-## 🖥️ Monitoramento & Portas de Acesso
+## Monitoramento & Portas de Acesso
 
 | Serviço | URL de Acesso | Credenciais Padrão | Finalidade |
 | :--- | :--- | :--- | :--- |
@@ -216,7 +216,7 @@ agro-data-intelligence/
 
 ---
 
-## 📸 Evidências em Produção (Screenshots)
+## Evidências em Produção (Screenshots)
 
 ### 1. Orquestração End-to-End (Apache Airflow)
 Execução completa da DAG `pipeline_agro_completo`, orquestrando ingestão da API SIDRA, transformação distribuída em PySpark, carga JDBC no PostgreSQL e modelagem dimensional com dbt.
@@ -240,7 +240,7 @@ Consulta SQL executada no **Superset SQL Lab** diretamente sobre o Star Schema (
 
 ---
 
-## 🗺️ Próximos Passos (Roadmap)
+## Próximos Passos (Roadmap)
 
 - [ ] Ingestão de séries meteorológicas diárias da API do INMET.
 - [ ] Implementação de testes automatizados com `dbt test` (verificação de unicidade e valores nulos).
