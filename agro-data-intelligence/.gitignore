@@ -16,3 +16,9 @@ __pycache__/
 .venv/
 venv/
 ENV/
+
+# dbt artefatos e logs
+dbt_agro/target/
+dbt_agro/logs/
+dbt_agro/dbt_packages/
+
