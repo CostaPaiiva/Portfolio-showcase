@@ -23,6 +23,7 @@
 - [Decisões Arquiteturais (ADRs)](#-decisões-arquiteturais-adrs)
 - [Como Executar Localmente](#-como-executar-localmente)
 - [Monitoramento & Portas de Acesso](#-monitoramento--portas-de-acesso)
+- [Evidências em Produção (Screenshots)](#-evidências-em-produção-screenshots)
 - [Próximos Passos (Roadmap)](#-próximos-passos-roadmap)
 
 ---
@@ -212,6 +213,30 @@ agro-data-intelligence/
 | **MinIO S3 API** | `http://localhost:9000` | Definido no `.env` | Endpoint da API S3 para conexão de scripts |
 | **PostgreSQL DW** | `localhost:15432` | Definido no `.env` | Banco relacional contendo as tabelas Gold |
 | **Apache Superset** | `http://localhost:8088` | `admin` / `admin` | Criação e visualização de dashboards BI |
+
+---
+
+## 📸 Evidências em Produção (Screenshots)
+
+### 1. Orquestração End-to-End (Apache Airflow)
+Execução completa da DAG `pipeline_agro_completo`, orquestrando ingestão da API SIDRA, transformação distribuída em PySpark, carga JDBC no PostgreSQL e modelagem dimensional com dbt.
+
+![Pipeline Airflow](docs/images/01-airflow-pipeline.png)
+
+### 2. Data Lake — Camada Bronze (MinIO S3)
+Armazenamento imutável dos dados brutos da pesquisa PAM/IBGE em formato **JSON**, particionados por fonte e ano de referência.
+
+![MinIO Bronze](docs/images/02-minio-bronze-json.png)
+
+### 3. Data Lake — Camada Silver (MinIO S3 / PySpark)
+Dados tratados, tipados e convertidos pelo **Apache Spark** para formato colunar **Parquet (Snappy)** com marcador `_SUCCESS`.
+
+![MinIO Silver](docs/images/03-minio-silver-parquet.png)
+
+### 4. Camada Gold & Consumo Analítico (Apache Superset + dbt)
+Consulta SQL executada no **Superset SQL Lab** diretamente sobre o Star Schema (`gold.fato_producao`, `gold.dim_estado`, `gold.dim_cultura`), exibindo os maiores produtores agrícolas do Brasil.
+
+![Superset SQL Lab](docs/images/04-superset-sql-gold.png)
 
 ---
 
